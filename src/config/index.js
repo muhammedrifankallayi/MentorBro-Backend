@@ -18,6 +18,8 @@ module.exports = {
             'http://localhost:4200',
             "http://localhost:4201",
             "http://localhost:4202",
+            'http://localhost:4201',
+            'https://studentmentorbro.netlify.app',
             process.env.CORS_ORIGIN,
         ].filter(Boolean),
         credentials: true,

@@ -12,7 +12,7 @@ process.on('uncaughtException', (err) => {
 // Load environment variables
 require('dotenv').config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // Connect to MongoDB and start server
 const startServer = async () => {
