@@ -6,6 +6,7 @@ const batchRoutes = require('./batch');
 const programRoutes = require('./program');
 const programTaskRoutes = require('./programTask');
 const taskReviewRoutes = require('./taskReview');
+const webhookRoutes = require('./webhook/webhook.routes');
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.use('/batch', batchRoutes);
 router.use('/program', programRoutes);
 router.use('/program-task', programTaskRoutes);
 router.use('/task-review', taskReviewRoutes);
+router.use('/webhook', webhookRoutes);
 
 module.exports = router;
 
