@@ -112,9 +112,9 @@ const createReviewerByAdmin = async (reviewerData, loginUrl = null) => {
         currentCompany
     } = reviewerData;
 
-    // Validate required fields
-    if (!fullName || !username) {
-        throw new AppError('Please provide fullName and username', 400);
+    // Validate required fields - only username is required
+    if (!username) {
+        throw new AppError('Please provide username', 400);
     }
 
     // Must have either email or mobileNo
@@ -150,7 +150,7 @@ const createReviewerByAdmin = async (reviewerData, loginUrl = null) => {
 
     // Create reviewer with generated password
     const reviewer = await Reviewer.create({
-        fullName,
+        fullName, // Will be set to username by pre-save hook if not provided
         username,
         password: generatedPassword, // Will be hashed by the model pre-save hook
         email,
@@ -166,7 +166,7 @@ const createReviewerByAdmin = async (reviewerData, loginUrl = null) => {
         try {
             const mailer = require('../utils/mailer');
             await mailer.sendReviewerCredentialsEmail(email, {
-                fullName,
+                fullName: reviewer.fullName || username, // Use actual fullName from reviewer or username
                 username,
                 password: generatedPassword,
                 loginUrl
@@ -198,6 +198,7 @@ const getAllReviewers = async (queryParams = {}) => {
         sortBy = 'createdAt',
         sortOrder = 'desc',
         isActive,
+        isVerified,
         minExperience,
         maxExperience,
         currentCompany,
@@ -210,6 +211,11 @@ const getAllReviewers = async (queryParams = {}) => {
     // Active status filter
     if (isActive !== undefined) {
         filter.isActive = isActive === 'true' || isActive === true;
+    }
+
+    // Verified status filter
+    if (isVerified !== undefined) {
+        filter.isVerified = isVerified === 'true' || isVerified === true;
     }
 
     // Experience range filter
@@ -419,17 +425,63 @@ const permanentlyDeleteReviewer = async (reviewerId) => {
     return { message: 'Reviewer permanently deleted' };
 };
 
+/**
+ * Update reviewer verification status
+ * @param {string} reviewerId - Reviewer ID
+ * @param {boolean} isVerified - Verification status
+ * @returns {Object} Updated reviewer
+ */
+const updateReviewerVerificationStatus = async (reviewerId, isVerified) => {
+    const reviewer = await Reviewer.findByIdAndUpdate(
+        reviewerId,
+        { isVerified },
+        { new: true, runValidators: true }
+    )
+        .select('-password')
+        .populate('teachingPrograms', 'name totalWeeks');
+
+    if (!reviewer) {
+        throw new AppError('Reviewer not found', 404);
+    }
+
+    return reviewer;
+};
+
+/**
+ * Get reviewer verification status
+ * @param {string} reviewerId - Reviewer ID
+ * @returns {Object} Verification status details
+ */
+const getVerificationStatus = async (reviewerId) => {
+    const reviewer = await Reviewer.findById(reviewerId)
+        .select('username fullName email isVerified isActive');
+
+    if (!reviewer) {
+        throw new AppError('Reviewer not found', 404);
+    }
+
+    return {
+        isVerified: reviewer.isVerified,
+        isActive: reviewer.isActive,
+        username: reviewer.username,
+        fullName: reviewer.fullName,
+        email: reviewer.email,
+    };
+};
+
 module.exports = {
     signToken,
     createSendToken,
     register,
     login,
     getById,
+    getVerificationStatus,
     createReviewerByAdmin,
     getAllReviewers,
     getReviewerById,
     updateReviewer,
     updateReviewerStatus,
+    updateReviewerVerificationStatus,
     deleteReviewer,
     permanentlyDeleteReviewer,
 };

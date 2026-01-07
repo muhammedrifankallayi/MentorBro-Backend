@@ -30,12 +30,12 @@ const taskReviewSchema = new mongoose.Schema(
             max: [100, 'Score cannot exceed 100'],
         },
         practicalImprovement: {
-            type: String,
-            trim: true,
+            type: [String],
+            default: [],
         },
         theoryImprovement: {
-            type: String,
-            trim: true,
+            type: [String],
+            default: [],
         },
         scheduledDate: {
             type: Date,

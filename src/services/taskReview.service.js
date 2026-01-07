@@ -39,7 +39,18 @@ const getAll = async (queryParams = {}) => {
     const filter = {};
 
     if (student) filter.student = student;
-    if (reviewer) filter.reviewer = reviewer;
+
+    // Handle reviewer filter - support for unassigned reviews
+    if (reviewer !== undefined) {
+        if (reviewer === 'null' || reviewer === 'unassigned' || reviewer === '') {
+            // Get reviews where reviewer is not assigned (null or doesn't exist)
+            filter.reviewer = { $in: [null, undefined] };
+        } else {
+            // Get reviews for specific reviewer
+            filter.reviewer = reviewer;
+        }
+    }
+
     if (program) filter.program = program;
     if (isReviewCompleted !== undefined) filter.isReviewCompleted = isReviewCompleted === 'true';
     if (reviewStatus) filter.reviewStatus = reviewStatus;

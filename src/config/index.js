@@ -15,7 +15,9 @@ module.exports = {
     // CORS Configuration
     cors: {
         origin: [
-            '*',
+            'http://localhost:4200',
+            "http://localhost:4201",
+            "http://localhost:4202",
             process.env.CORS_ORIGIN,
         ].filter(Boolean),
         credentials: true,

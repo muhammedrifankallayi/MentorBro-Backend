@@ -7,8 +7,6 @@ const reviewerSchema = new mongoose.Schema(
 
         fullName: {
             type: String,
-            required: [true, 'Please provide a FullName'],
-            unique: true,
             trim: true,
             maxlength: [50, 'FullName cannot be more than 50 characters'],
         },
@@ -67,6 +65,10 @@ const reviewerSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
         passwordChangedAt: Date,
         passwordResetToken: String,
         passwordResetExpires: Date,
@@ -82,6 +84,14 @@ const reviewerSchema = new mongoose.Schema(
 reviewerSchema.index({ username: 1 });
 reviewerSchema.index({ mobileNo: 1 });
 reviewerSchema.index({ email: 1 });
+
+// Set fullName to username if not provided
+reviewerSchema.pre('save', function (next) {
+    if (!this.fullName && this.username) {
+        this.fullName = this.username;
+    }
+    next();
+});
 
 // Hash password before saving
 reviewerSchema.pre('save', async function (next) {

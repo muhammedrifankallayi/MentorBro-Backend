@@ -52,6 +52,16 @@ const getMe = catchAsync(async (req, res) => {
 });
 
 /**
+ * @desc    Get current reviewer's verification status
+ * @route   GET /api/v1/reviewer/verification-status
+ * @access  Private
+ */
+const getVerificationStatus = catchAsync(async (req, res) => {
+    const status = await reviewerService.getVerificationStatus(req.user.id);
+    ApiResponse.success(res, status, 'Verification status retrieved successfully');
+});
+
+/**
  * @desc    Add reviewer by admin (auto-generates password and sends email)
  * @route   POST /api/v1/reviewer/add
  * @access  Private/Admin
@@ -178,16 +188,40 @@ const permanentlyDeleteReviewer = catchAsync(async (req, res) => {
     ApiResponse.success(res, null, 'Reviewer permanently deleted');
 });
 
+/**
+ * @desc    Update reviewer verification status
+ * @route   PATCH /api/v1/reviewer/:id/verify
+ * @access  Private/Admin
+ */
+const updateReviewerVerificationStatus = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const { isVerified } = req.body;
+
+    if (isVerified === undefined) {
+        throw new ApiResponse.error(res, 'isVerified field is required', 400);
+    }
+
+    const reviewer = await reviewerService.updateReviewerVerificationStatus(id, isVerified);
+
+    ApiResponse.success(
+        res,
+        { reviewer },
+        `Reviewer ${isVerified ? 'verified' : 'unverified'} successfully`
+    );
+});
+
 module.exports = {
     register,
     login,
     logout,
     getMe,
+    getVerificationStatus,
     addReviewerByAdmin,
     getAllReviewers,
     getReviewerById,
     updateReviewer,
     updateReviewerStatus,
+    updateReviewerVerificationStatus,
     deleteReviewer,
     permanentlyDeleteReviewer,
 };
