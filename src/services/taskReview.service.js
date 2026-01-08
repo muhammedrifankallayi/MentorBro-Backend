@@ -1,4 +1,6 @@
 const TaskReview = require('../models/taskReview.model');
+const ProgramTask = require('../models/programTask.model');
+const Student = require('../models/student.model');
 const { AppError } = require('../utils');
 
 /**
@@ -7,6 +9,20 @@ const { AppError } = require('../utils');
  * @returns {Promise<Object>} Created task review
  */
 const create = async (reviewData) => {
+    // Check if a TaskReview already exists for the same student and programTask
+    if (reviewData.student && reviewData.programTask) {
+        const existingReview = await TaskReview.findOne({
+            student: reviewData.student,
+            programTask: reviewData.programTask,
+            isCancelled: { $in: [false, null, undefined] },
+        });
+
+        // If exists and is not a re-review, don't allow creation
+        if (existingReview && !reviewData.isReReview) {
+            throw new AppError('A task review already exists for this program task. Only re-reviews are allowed.', 400);
+        }
+    }
+
     const taskReview = await TaskReview.create(reviewData);
 
     // Fetch the created document with populated fields
@@ -298,6 +314,54 @@ const assignReviewer = async (id, reviewerId) => {
     return updatedTaskReview;
 };
 
+/**
+ * Get next week program task for a student based on their last completed review
+ * @param {string} studentId - Student ID
+ * @returns {Promise<Object>} Next program task or current if re-review needed
+ */
+const getNextWeekForStudent = async (studentId) => {
+    // Find last completed review by endDate (exclude null/undefined endDate)
+    const lastReview = await TaskReview.findOne({
+        student: studentId,
+        isReviewCompleted: true,
+        isCancelled: { $in: [false, null, undefined] },
+        endDate: { $ne: null, $exists: true },
+    })
+        .sort({ endDate: -1 })
+        .populate('programTask', 'week')
+        .populate('program', '_id name totalWeeks');
+    console.log(lastReview);
+
+    // No review found → get student's program and return week 1 task
+    if (!lastReview || !lastReview.programTask) {
+        const student = await Student.findById(studentId).select('program');
+
+        if (!student || !student.program) {
+            throw new AppError('Student or program not found', 404);
+        }
+
+        const firstTask = await ProgramTask.findOne({
+            program: student.program,
+            week: 1,
+        }).populate('program', 'name totalWeeks');
+
+        return firstTask;
+    }
+
+    const programId = lastReview.program._id;
+    const currentWeek = lastReview.programTask.week;
+
+    // If it's a re-review → same week, else → week + 1
+    const targetWeek = lastReview.isReReview ? currentWeek : currentWeek + 1;
+
+    const nextTask = await ProgramTask.findOne({
+        program: programId,
+        week: targetWeek,
+    }).populate('program', 'name totalWeeks');
+
+    return nextTask;
+};
+
 module.exports = {
     create,
     getAll,
@@ -308,5 +372,6 @@ module.exports = {
     remove,
     cancel,
     assignReviewer,
+    getNextWeekForStudent,
 };
 

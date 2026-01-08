@@ -34,9 +34,6 @@ const programTaskSchema = new mongoose.Schema(
     }
 );
 
-// Compound unique index - week must be unique per program
-programTaskSchema.index({ program: 1, week: 1 }, { unique: true });
-
 // Index for faster queries
 programTaskSchema.index({ program: 1 });
 programTaskSchema.index({ week: 1 });

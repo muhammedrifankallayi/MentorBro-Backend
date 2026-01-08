@@ -7,16 +7,8 @@ const { AppError } = require('../utils');
  * @returns {Promise<Object>} Created program task
  */
 const create = async (taskData) => {
-    try {
-        const programTask = await ProgramTask.create(taskData);
-        return await programTask.populate('program', 'name totalWeeks');
-    } catch (error) {
-        // Handle duplicate key error (same week in same program)
-        if (error.code === 11000) {
-            throw new AppError('A task for this week already exists in this program', 400);
-        }
-        throw error;
-    }
+    const programTask = await ProgramTask.create(taskData);
+    return await programTask.populate('program', 'name totalWeeks');
 };
 
 /**
@@ -107,28 +99,20 @@ const getByProgramId = async (programId) => {
  * @returns {Promise<Object>} Updated program task
  */
 const update = async (id, updateData) => {
-    try {
-        const programTask = await ProgramTask.findByIdAndUpdate(
-            id,
-            updateData,
-            {
-                new: true,
-                runValidators: true,
-            }
-        ).populate('program', 'name totalWeeks');
-
-        if (!programTask) {
-            throw new AppError('Program task not found', 404);
+    const programTask = await ProgramTask.findByIdAndUpdate(
+        id,
+        updateData,
+        {
+            new: true,
+            runValidators: true,
         }
+    ).populate('program', 'name totalWeeks');
 
-        return programTask;
-    } catch (error) {
-        // Handle duplicate key error
-        if (error.code === 11000) {
-            throw new AppError('A task for this week already exists in this program', 400);
-        }
-        throw error;
+    if (!programTask) {
+        throw new AppError('Program task not found', 404);
     }
+
+    return programTask;
 };
 
 /**

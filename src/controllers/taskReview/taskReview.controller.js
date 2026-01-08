@@ -98,6 +98,17 @@ const assignReviewer = catchAsync(async (req, res) => {
     ApiResponse.success(res, taskReview, 'Reviewer assigned successfully');
 });
 
+/**
+ * @desc    Get next week task for a student
+ * @route   GET /api/v1/task-review/next-week/:studentId
+ * @access  Protected
+ */
+const getNextWeekForStudent = catchAsync(async (req, res) => {
+    const { studentId } = req.params;
+    const data = await taskReviewService.getNextWeekForStudent(studentId);
+    ApiResponse.success(res, data, 'Next week task retrieved successfully');
+});
+
 module.exports = {
     create,
     getAll,
@@ -108,5 +119,6 @@ module.exports = {
     remove,
     cancel,
     assignReviewer,
+    getNextWeekForStudent,
 };
 
