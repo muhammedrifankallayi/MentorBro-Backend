@@ -109,6 +109,22 @@ const getNextWeekForStudent = catchAsync(async (req, res) => {
     ApiResponse.success(res, data, 'Next week task retrieved successfully');
 });
 
+/**
+ * @desc    Bulk update multiple task reviews
+ * @route   PATCH /api/v1/task-review/bulk-update
+ * @access  Admin only
+ */
+const bulkUpdate = catchAsync(async (req, res) => {
+    const { updates } = req.body;
+
+    if (!updates || !Array.isArray(updates)) {
+        return ApiResponse.error(res, 'Updates array is required', 400);
+    }
+
+    const result = await taskReviewService.bulkUpdate(updates);
+    ApiResponse.success(res, result, 'Bulk update completed');
+});
+
 module.exports = {
     create,
     getAll,
@@ -120,5 +136,6 @@ module.exports = {
     cancel,
     assignReviewer,
     getNextWeekForStudent,
+    bulkUpdate,
 };
 

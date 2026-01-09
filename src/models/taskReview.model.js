@@ -73,6 +73,18 @@ const taskReviewSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        paymentAmount: {
+            type: Number,
+            default: 0,
+        },
+        isPaymentOrderd: {
+            type: Boolean,
+            default: false,
+        },
+        isPaymentCompleted: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

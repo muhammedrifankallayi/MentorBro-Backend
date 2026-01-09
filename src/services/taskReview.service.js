@@ -49,6 +49,8 @@ const getAll = async (queryParams = {}) => {
         program,
         isReviewCompleted,
         reviewStatus,
+        isPaymentOrderd,
+        isPaymentCompleted,
     } = queryParams;
 
     // Build filter
@@ -70,6 +72,8 @@ const getAll = async (queryParams = {}) => {
     if (program) filter.program = program;
     if (isReviewCompleted !== undefined) filter.isReviewCompleted = isReviewCompleted === 'true';
     if (reviewStatus) filter.reviewStatus = reviewStatus;
+    if (isPaymentOrderd !== undefined) filter.isPaymentOrderd = isPaymentOrderd === 'true';
+    if (isPaymentCompleted !== undefined) filter.isPaymentCompleted = isPaymentCompleted === 'true';
 
     // Build sort
     const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
@@ -362,6 +366,58 @@ const getNextWeekForStudent = async (studentId) => {
     return nextTask;
 };
 
+/**
+ * Bulk update multiple task reviews
+ * @param {Array} updates - Array of objects with { id, updateData }
+ * @returns {Promise<Object>} Results with updated count and any errors
+ */
+const bulkUpdate = async (updates) => {
+    if (!Array.isArray(updates) || updates.length === 0) {
+        throw new AppError('Updates must be a non-empty array', 400);
+    }
+
+    const results = {
+        success: [],
+        failed: [],
+    };
+
+    for (const item of updates) {
+        try {
+            const { _id, ...updateData } = item;
+
+            if (!_id) {
+                results.failed.push({ id: null, error: 'ID is required' });
+                continue;
+            }
+
+            const taskReview = await TaskReview.findByIdAndUpdate(
+                _id,
+                updateData,
+                {
+                    new: true,
+                    runValidators: true,
+                }
+            );
+
+            if (!taskReview) {
+                results.failed.push({ _id, error: 'Task review not found' });
+            } else {
+                results.success.push({ _id, updated: true });
+            }
+        } catch (error) {
+            results.failed.push({ _id: item._id, error: error.message });
+        }
+    }
+
+    return {
+        totalProcessed: updates.length,
+        successCount: results.success.length,
+        failedCount: results.failed.length,
+        success: results.success,
+        failed: results.failed,
+    };
+};
+
 module.exports = {
     create,
     getAll,
@@ -373,5 +429,6 @@ module.exports = {
     cancel,
     assignReviewer,
     getNextWeekForStudent,
+    bulkUpdate,
 };
 

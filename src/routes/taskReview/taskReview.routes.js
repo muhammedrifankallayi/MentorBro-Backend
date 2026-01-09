@@ -12,6 +12,7 @@ router.get('/reviewer/:reviewerId', taskReviewController.getByReviewerId);
 router.get('/next-week/:studentId', taskReviewController.getNextWeekForStudent);
 router.get('/:id', taskReviewController.getById);
 router.post('/', taskReviewController.create);
+router.patch('/bulk-update', taskReviewController.bulkUpdate);
 router.patch('/:id/cancel', taskReviewController.cancel);
 router.patch('/:id/assign-reviewer', taskReviewController.assignReviewer);
 
