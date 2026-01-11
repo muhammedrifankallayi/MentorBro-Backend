@@ -167,6 +167,7 @@ const getByApprovalStatus = async (status, queryParams = {}) => {
     const [students, total] = await Promise.all([
         Student.find(filter)
             .populate('batch', 'name startOn endedOn')
+            .populate('program', 'name totalWeeks')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -194,7 +195,7 @@ const updateApprovalStatus = async (studentId, approvalStatus) => {
         studentId,
         { approvalStatus },
         { new: true, runValidators: true }
-    ).populate('batch', 'name startOn endedOn');
+    ).populate('batch', 'name startOn endedOn').populate('program', 'name totalWeeks');
 
     if (!student) {
         throw new AppError('Student not found', 404);
