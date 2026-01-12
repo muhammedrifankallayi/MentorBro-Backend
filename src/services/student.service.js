@@ -44,9 +44,9 @@ const createSendToken = (student, statusCode, res) => {
 const register = async (studentData) => {
     const { name, type, email, password, mobileNo, address, batch, program } = studentData;
 
-    // Check if email and password are provided
-    if (!email || !password) {
-        throw new AppError('Please provide email and password', 400);
+    // Check if name, email and password are provided
+    if (!name || !email || !password) {
+        throw new AppError('Please provide name, email and password', 400);
     }
 
     // Check if student already exists by email

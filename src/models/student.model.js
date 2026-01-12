@@ -6,6 +6,7 @@ const studentSchema = new mongoose.Schema(
     {
         name: {
             type: String,
+            required: [true, 'Please provide your name'],
             trim: true,
             maxlength: [50, 'Name cannot be more than 50 characters'],
         },
