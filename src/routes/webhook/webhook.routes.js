@@ -1,5 +1,5 @@
 const express = require('express');
-const { handleGitHubWebhook, handleWorkWebhook } = require('../../controllers/webhook/webhook.controller');
+const { handleGitHubWebhook, handleWorkWebhook, handleLearnWebhook } = require('../../controllers/webhook/webhook.controller');
 
 const router = express.Router();
 
@@ -16,5 +16,12 @@ router.post('/github', handleGitHubWebhook);
  * @access  Public
  */
 router.post('/work', handleWorkWebhook);
+
+/**
+ * @route   POST /api/v1/webhook/learn
+ * @desc    Handle webhook for LEARN frontend deployment
+ * @access  Public
+ */
+router.post('/learn', handleLearnWebhook);
 
 module.exports = router;
