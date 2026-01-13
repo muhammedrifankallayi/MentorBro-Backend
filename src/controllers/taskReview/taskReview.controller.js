@@ -136,6 +136,17 @@ const getLastReviewForStudent = catchAsync(async (req, res) => {
     ApiResponse.success(res, taskReview, 'Last task review retrieved successfully');
 });
 
+/**
+ * @desc    Get reviewer earnings for dashboard graph
+ * @route   GET /api/v1/task-review/reviewer/:reviewerId/earnings
+ * @access  Protected
+ */
+const getReviewerEarnings = catchAsync(async (req, res) => {
+    const { reviewerId } = req.params;
+    const result = await taskReviewService.getReviewerEarnings(reviewerId, req.query);
+    ApiResponse.success(res, result, 'Reviewer earnings retrieved successfully');
+});
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -149,5 +160,6 @@ module.exports = {
     assignReviewer,
     getNextWeekForStudent,
     bulkUpdate,
+    getReviewerEarnings,
 };
 

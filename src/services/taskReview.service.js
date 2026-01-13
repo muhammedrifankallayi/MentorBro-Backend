@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const TaskReview = require('../models/taskReview.model');
 const ProgramTask = require('../models/programTask.model');
 const Student = require('../models/student.model');
@@ -504,6 +505,121 @@ const getLastReviewForStudent = async (studentId) => {
     return taskReview;
 };
 
+/**
+ * Get reviewer earnings for dashboard graph
+ * Supports weekly, monthly, yearly, and today period types
+ * @param {string} reviewerId - Reviewer ID
+ * @param {Object} queryParams - Query parameters including period type
+ * @returns {Promise<Object>} Earnings data grouped by date
+ */
+const getReviewerEarnings = async (reviewerId, queryParams = {}) => {
+    const { period = 'weekly' } = queryParams;
+
+    // Calculate date range based on period type
+    const now = new Date();
+    let startDate, endDate;
+
+    switch (period) {
+        case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            break;
+        case 'weekly':
+            // Get the start of the current week (Sunday)
+            const dayOfWeek = now.getDay();
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - dayOfWeek);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+        case 'monthly':
+            // Get the start of the current month
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+            // Get the end of the current month
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+        case 'yearly':
+            // Get the start of the current year
+            startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+            // Get the end of the current year
+            endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+            break;
+        default:
+            // Default to weekly
+            const defaultDayOfWeek = now.getDay();
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - defaultDayOfWeek);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            endDate.setHours(23, 59, 59, 999);
+    }
+
+    // MongoDB aggregation to group earnings by date
+    const earningsData = await TaskReview.aggregate([
+        {
+            $match: {
+                reviewer: new mongoose.Types.ObjectId(reviewerId),
+                isPaymentCompleted: true,
+                isActive: { $ne: false },
+                endDate: {
+                    $gte: startDate,
+                    $lte: endDate,
+                },
+            },
+        },
+        {
+            $group: {
+                _id: {
+                    $dateToString: { format: '%Y-%m-%d', date: '$endDate' },
+                },
+                totalAmount: { $sum: '$paymentAmount' },
+                count: { $sum: 1 },
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                date: '$_id',
+                totalAmount: 1,
+                count: 1,
+            },
+        },
+        {
+            $sort: { date: 1 },
+        },
+    ]);
+
+    // Calculate total earnings for the period
+    const totalEarnings = earningsData.reduce((sum, item) => sum + item.totalAmount, 0);
+    const totalReviews = earningsData.reduce((sum, item) => sum + item.count, 0);
+
+    // Generate dates array for the selected period (to fill in days with 0 earnings)
+    const allDates = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const existingData = earningsData.find((item) => item.date === dateStr);
+        allDates.push({
+            date: dateStr,
+            totalAmount: existingData ? existingData.totalAmount : 0,
+            count: existingData ? existingData.count : 0,
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+        period,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        totalEarnings,
+        totalReviews,
+        dailyEarnings: allDates,
+    };
+};
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -517,5 +633,6 @@ module.exports = {
     assignReviewer,
     getNextWeekForStudent,
     bulkUpdate,
+    getReviewerEarnings,
 };
 

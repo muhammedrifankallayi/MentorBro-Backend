@@ -8,6 +8,7 @@ router.use(protect);
 // Protected routes
 router.get('/', taskReviewController.getAll);
 router.get('/student/:studentId', taskReviewController.getByStudentId);
+router.get('/reviewer/:reviewerId/earnings', taskReviewController.getReviewerEarnings);
 router.get('/reviewer/:reviewerId', taskReviewController.getByReviewerId);
 router.get('/next-week/:studentId', taskReviewController.getNextWeekForStudent);
 router.get('/last-review/:studentId', taskReviewController.getLastReviewForStudent);
