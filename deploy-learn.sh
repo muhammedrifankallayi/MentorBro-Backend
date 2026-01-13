@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-echo "🚀 Deploying LEARN frontend"
+echo "🚀 Deploying WORK frontend"
 
 cd /var/www/MentorBroManagement-Student
 

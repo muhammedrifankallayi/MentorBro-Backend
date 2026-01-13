@@ -49,7 +49,7 @@ const handleWorkWebhook = async (req, res, next) => {
         logger.info('Work deployment webhook received');
 
         // Execute deployment script
-        exec('bash /var/www/MentorBro-Reviewer/deploy-work.sh', (err, stdout, stderr) => {
+        exec('bash /var/www/MentorBro-Backend/deploy-work.sh', (err, stdout, stderr) => {
             if (err) {
                 logger.error('Work Deployment failed:', err);
                 console.error(stderr);
@@ -80,7 +80,7 @@ const handleLearnWebhook = async (req, res, next) => {
         logger.info('Learn deployment webhook received');
 
         // Execute deployment script
-        exec('bash /var/www/MentorBroManagement-Student/deploy-learn.sh', (err, stdout, stderr) => {
+        exec('bash /var/www/MentorBro-Backend/deploy-learn.sh', (err, stdout, stderr) => {
             if (err) {
                 logger.error('Learn Deployment failed:', err);
                 console.error(stderr);
