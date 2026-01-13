@@ -478,6 +478,104 @@ const getVerificationStatus = async (reviewerId) => {
     };
 };
 
+/**
+ * Update reviewer's own profile (self-service)
+ * Restricts which fields can be updated by the reviewer themselves
+ * @param {string} reviewerId - Reviewer ID (from authenticated user)
+ * @param {Object} updateData - Data to update
+ * @returns {Object} Updated reviewer
+ */
+const updateMyProfile = async (reviewerId, updateData) => {
+    // List of fields that reviewers are allowed to update
+    const allowedFields = [
+        'fullName',
+        'username',
+        'email',
+        'mobileNo',
+        'address',
+        'totalExperience',
+        'currentCompany',
+    ];
+
+    // Filter out any fields that are not allowed
+    const filteredData = {};
+    Object.keys(updateData).forEach((key) => {
+        if (allowedFields.includes(key)) {
+            filteredData[key] = updateData[key];
+        }
+    });
+
+    // If no valid fields to update
+    if (Object.keys(filteredData).length === 0) {
+        throw new AppError('No valid fields to update. Allowed fields: ' + allowedFields.join(', '), 400);
+    }
+
+    // Check if username is being updated and if it's already taken
+    if (filteredData.username) {
+        const existingUsername = await Reviewer.findOne({
+            username: filteredData.username,
+            _id: { $ne: reviewerId }
+        });
+        if (existingUsername) {
+            throw new AppError('Username already exists', 400);
+        }
+    }
+
+    // Check if email is being updated and if it's already taken
+    if (filteredData.email) {
+        const existingEmail = await Reviewer.findOne({
+            email: filteredData.email,
+            _id: { $ne: reviewerId }
+        });
+        if (existingEmail) {
+            throw new AppError('Email already exists', 400);
+        }
+    }
+
+    // Check if mobile number is being updated and if it's already taken
+    if (filteredData.mobileNo) {
+        const existingMobile = await Reviewer.findOne({
+            mobileNo: filteredData.mobileNo,
+            _id: { $ne: reviewerId }
+        });
+        if (existingMobile) {
+            throw new AppError('Mobile number already exists', 400);
+        }
+    }
+
+    const reviewer = await Reviewer.findByIdAndUpdate(
+        reviewerId,
+        filteredData,
+        { new: true, runValidators: true }
+    )
+        .select('-password')
+        .populate('teachingPrograms', 'name totalWeeks');
+
+    if (!reviewer) {
+        throw new AppError('Reviewer not found', 404);
+    }
+
+    return reviewer;
+};
+
+/**
+ * Check if a username is already taken
+ * Uses efficient MongoDB query to check existence only
+ * @param {string} username - Username to check
+ * @returns {Promise<boolean>} True if username exists, false otherwise
+ */
+const checkUsernameAvailability = async (username) => {
+    if (!username) {
+        throw new AppError('Username is required', 400);
+    }
+
+    // Using .exists() is faster than .findOne() as it returns only the _id
+    const result = await Reviewer.exists({ username: username });
+
+    // safe check: .exists() returns { _id: ... } object if found, null if not
+    return !!result;
+};
+
 module.exports = {
     signToken,
     createSendToken,
@@ -493,6 +591,8 @@ module.exports = {
     updateReviewerVerificationStatus,
     deleteReviewer,
     permanentlyDeleteReviewer,
+    updateMyProfile,
+    checkUsernameAvailability,
 };
 
 

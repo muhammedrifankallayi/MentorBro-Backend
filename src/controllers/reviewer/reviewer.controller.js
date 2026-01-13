@@ -210,6 +210,40 @@ const updateReviewerVerificationStatus = catchAsync(async (req, res) => {
     );
 });
 
+/**
+ * @desc    Update current reviewer's own profile
+ * @route   PATCH /api/v1/reviewer/me
+ * @access  Private (Reviewer)
+ */
+const updateMyProfile = catchAsync(async (req, res) => {
+    const reviewer = await reviewerService.updateMyProfile(req.user.id, req.body);
+    ApiResponse.success(res, { reviewer }, 'Profile updated successfully');
+});
+
+/**
+ * @desc    Check if username is available
+ * @route   GET /api/v1/reviewer/check-username
+ * @access  Public
+ */
+const checkUsername = catchAsync(async (req, res) => {
+    const { username } = req.query;
+
+    if (!username) {
+        throw new ApiResponse.error(res, 'Username is required', 400);
+    }
+
+    const exists = await reviewerService.checkUsernameAvailability(username);
+
+    // If exists is true, it means username is TAKEN (not available)
+    // If exists is false, it means username is AVAILABLE
+
+    ApiResponse.success(res, {
+        username,
+        exists,
+        available: !exists
+    }, exists ? 'Username is already taken' : 'Username is available');
+});
+
 module.exports = {
     register,
     login,
@@ -224,5 +258,7 @@ module.exports = {
     updateReviewerVerificationStatus,
     deleteReviewer,
     permanentlyDeleteReviewer,
+    updateMyProfile,
+    checkUsername,
 };
 

@@ -7,10 +7,12 @@ const router = express.Router();
 // Public routes
 router.post('/register', reviewerController.register);
 router.post('/login', reviewerController.login);
+router.get('/check-username', reviewerController.checkUsername);
 
 // Protected routes (authenticated users)
 router.post('/logout', protect, reviewerController.logout);
 router.get('/me', protect, reviewerController.getMe);
+router.patch('/me', protect, reviewerController.updateMyProfile);
 router.get('/verification-status', protect, reviewerController.getVerificationStatus);
 
 // Admin only routes
