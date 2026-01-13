@@ -480,7 +480,10 @@ const bulkUpdate = async (updates) => {
  * @returns {Promise<Object>} Last task review
  */
 const getLastReviewForStudent = async (studentId) => {
-    const taskReview = await TaskReview.findOne({ student: studentId })
+    const taskReview = await TaskReview.findOne({
+        student: studentId,
+        isReviewCompleted: true
+    })
         .sort({ scheduledDate: -1, createdAt: -1 })
         .populate({
             path: 'student',
