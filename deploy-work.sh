@@ -12,7 +12,7 @@ echo "📦 Installing dependencies"
 npm i
 
 echo "🏗️ Building Angular app"
-npm run build
+./node_modules/.bin/ng build
 
 echo "🧹 Cleaning old build"
 rm -rf /var/www/work/*
