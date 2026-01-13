@@ -27,7 +27,14 @@ const create = async (reviewData) => {
 
     // Fetch the created document with populated fields
     return await TaskReview.findById(taskReview._id)
-        .populate('student', 'name email')
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
         .populate('reviewer', 'username');
@@ -84,7 +91,14 @@ const getAll = async (queryParams = {}) => {
     // Execute query
     const [taskReviews, total] = await Promise.all([
         TaskReview.find(filter)
-            .populate('student', 'name email')
+            .populate({
+                path: 'student',
+                select: 'name email batch',
+                populate: {
+                    path: 'batch',
+                    select: 'name',
+                },
+            })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week')
             .populate('reviewer', 'username fullName')
@@ -112,7 +126,14 @@ const getAll = async (queryParams = {}) => {
  */
 const getById = async (id) => {
     const taskReview = await TaskReview.findById(id)
-        .populate('student', 'name email')
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week tasks')
         .populate('reviewer', 'username fullName');
@@ -145,7 +166,14 @@ const getByStudentId = async (studentId, queryParams = {}) => {
 
     const [taskReviews, total] = await Promise.all([
         TaskReview.find(filter)
-            .populate('student', 'name email')
+            .populate({
+                path: 'student',
+                select: 'name email batch',
+                populate: {
+                    path: 'batch',
+                    select: 'name',
+                },
+            })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week')
             .populate('reviewer', 'username fullName')
@@ -187,7 +215,14 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
 
     const [taskReviews, total] = await Promise.all([
         TaskReview.find(filter)
-            .populate('student', 'name email')
+            .populate({
+                path: 'student',
+                select: 'name email batch',
+                populate: {
+                    path: 'batch',
+                    select: 'name',
+                },
+            })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week')
             .populate('reviewer', 'username fullName')
@@ -223,7 +258,14 @@ const update = async (id, updateData) => {
             runValidators: true,
         }
     )
-        .populate('student', 'name email')
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
         .populate('reviewer', 'username fullName');
@@ -265,7 +307,14 @@ const cancel = async (id) => {
         { isCancelled: true },
         { new: true }
     )
-        .populate('student', 'name email')
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
         .populate('reviewer', 'username fullName');
@@ -310,7 +359,14 @@ const assignReviewer = async (id, reviewerId) => {
             runValidators: true,
         }
     )
-        .populate('student', 'name email')
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
         .populate('reviewer', 'fullName username email mobileNo');
