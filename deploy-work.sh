@@ -1,6 +1,9 @@
 #!/bin/bash
 set -ex
 
+# Ensure predictable environment (VERY IMPORTANT for webhooks)
+export PATH=/usr/local/bin:/usr/bin:/bin:$PATH
+
 echo "🚀 Deploying WORK frontend"
 
 cd /var/www/MentorBro-Reviewer
@@ -9,7 +12,7 @@ echo "📥 Pulling latest code"
 git pull origin main
 
 echo "📦 Installing dependencies"
-npm i
+npm install
 
 echo "🏗️ Building Angular app"
 ./node_modules/.bin/ng build
