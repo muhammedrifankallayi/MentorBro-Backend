@@ -49,7 +49,7 @@ const handleWorkWebhook = async (req, res, next) => {
         logger.info('Work deployment webhook received');
 
         // Execute deployment script
-        exec('bash ./deploy-work.sh', (err, stdout, stderr) => {
+        exec('cd /var/www/MentorBro-Backend && bash ./deploy-work.sh', (err, stdout, stderr) => {
             if (err) {
                 logger.error('Work Deployment failed:', err);
                 console.error(stderr);
