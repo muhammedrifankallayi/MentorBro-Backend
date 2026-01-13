@@ -6,6 +6,7 @@ const router = express.Router();
 router.use(protect);
 
 // Protected routes
+router.get('/admin/stats', restrictTo('admin'), taskReviewController.getAdminStats);
 router.get('/', taskReviewController.getAll);
 router.get('/student/:studentId', taskReviewController.getByStudentId);
 router.get('/reviewer/:reviewerId/earnings', taskReviewController.getReviewerEarnings);

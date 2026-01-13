@@ -147,6 +147,16 @@ const getReviewerEarnings = catchAsync(async (req, res) => {
     ApiResponse.success(res, result, 'Reviewer earnings retrieved successfully');
 });
 
+/**
+ * @desc    Get admin stats (pending payment, completed reviews, unassigned reviews)
+ * @route   GET /api/v1/task-review/admin/stats
+ * @access  Admin only
+ */
+const getAdminStats = catchAsync(async (req, res) => {
+    const stats = await taskReviewService.getAdminStats(req.query);
+    ApiResponse.success(res, stats, 'Admin stats retrieved successfully');
+});
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -161,5 +171,6 @@ module.exports = {
     getNextWeekForStudent,
     bulkUpdate,
     getReviewerEarnings,
+    getAdminStats,
 };
 

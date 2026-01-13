@@ -650,6 +650,95 @@ const getReviewerEarnings = async (reviewerId, queryParams = {}) => {
     };
 };
 
+/**
+ * Get admin stats (pending payments, completed reviews, unassigned reviews)
+ * Uses aggregation facet for single-pass efficiency
+ * @param {Object} queryParams - Query parameters (fromDate, toDate)
+ * @returns {Promise<Object>} Stats object
+ */
+const getAdminStats = async (queryParams = {}) => {
+    const { fromDate, toDate } = queryParams;
+
+    // Build Match Stage for Date Filtering
+    const matchStage = {
+        isActive: { $ne: false }, // Always exclude deleted
+    };
+
+    if (fromDate || toDate) {
+        matchStage.scheduledDate = {};
+        if (fromDate) {
+            matchStage.scheduledDate.$gte = new Date(fromDate);
+        }
+        if (toDate) {
+            const end = new Date(toDate);
+            end.setHours(23, 59, 59, 999);
+            matchStage.scheduledDate.$lte = end;
+        }
+    }
+
+    const stats = await TaskReview.aggregate([
+        { $match: matchStage },
+        {
+            $facet: {
+                // 1. Total Pending Payment (Review Completed but Payment Not Completed)
+                pendingPayments: [
+                    {
+                        $match: {
+                            isReviewCompleted: true,
+                            isPaymentCompleted: false,
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalAmount: { $sum: '$paymentAmount' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                ],
+                // 2. Total Reviews Completed
+                completedReviews: [
+                    {
+                        $match: {
+                            isReviewCompleted: true,
+                        },
+                    },
+                    {
+                        $count: 'count',
+                    },
+                ],
+                // 3. Total Unassigned Reviews
+                unassignedReviews: [
+                    {
+                        $match: {
+                            $or: [{ reviewer: null }, { reviewer: { $exists: false } }],
+                        },
+                    },
+                    {
+                        $count: 'count',
+                    },
+                ],
+            },
+        },
+    ]);
+
+    // Extract results from facets (arrays)
+    const result = stats[0];
+
+    return {
+        pendingPayment: {
+            amount: result.pendingPayments[0] ? result.pendingPayments[0].totalAmount : 0,
+            count: result.pendingPayments[0] ? result.pendingPayments[0].count : 0,
+        },
+        totalCompletedReviews: result.completedReviews[0] ? result.completedReviews[0].count : 0,
+        totalUnassignedReviews: result.unassignedReviews[0] ? result.unassignedReviews[0].count : 0,
+        dateRange: {
+            from: fromDate || null,
+            to: toDate || null,
+        },
+    };
+};
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -664,5 +753,6 @@ module.exports = {
     getNextWeekForStudent,
     bulkUpdate,
     getReviewerEarnings,
+    getAdminStats,
 };
 
