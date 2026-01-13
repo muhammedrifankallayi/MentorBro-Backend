@@ -474,7 +474,35 @@ const bulkUpdate = async (updates) => {
     };
 };
 
+/**
+ * Get the last (most recent) task review for a student
+ * @param {string} studentId - Student ID
+ * @returns {Promise<Object>} Last task review
+ */
+const getLastReviewForStudent = async (studentId) => {
+    const taskReview = await TaskReview.findOne({ student: studentId })
+        .sort({ scheduledDate: -1, createdAt: -1 })
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
+        .populate('program', 'name totalWeeks')
+        .populate('programTask', 'name week')
+        .populate('reviewer', 'username fullName');
+
+    if (!taskReview) {
+        throw new AppError('No reviews found for this student', 404);
+    }
+
+    return taskReview;
+};
+
 module.exports = {
+    getLastReviewForStudent,
     create,
     getAll,
     getById,

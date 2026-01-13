@@ -10,6 +10,7 @@ router.get('/', taskReviewController.getAll);
 router.get('/student/:studentId', taskReviewController.getByStudentId);
 router.get('/reviewer/:reviewerId', taskReviewController.getByReviewerId);
 router.get('/next-week/:studentId', taskReviewController.getNextWeekForStudent);
+router.get('/last-review/:studentId', taskReviewController.getLastReviewForStudent);
 router.get('/:id', taskReviewController.getById);
 router.post('/', taskReviewController.create);
 router.patch('/bulk-update', taskReviewController.bulkUpdate);

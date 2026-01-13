@@ -125,7 +125,19 @@ const bulkUpdate = catchAsync(async (req, res) => {
     ApiResponse.success(res, result, 'Bulk update completed');
 });
 
+/**
+ * @desc    Get last task review for a student
+ * @route   GET /api/v1/task-review/last-review/:studentId
+ * @access  Protected
+ */
+const getLastReviewForStudent = catchAsync(async (req, res) => {
+    const { studentId } = req.params;
+    const taskReview = await taskReviewService.getLastReviewForStudent(studentId);
+    ApiResponse.success(res, taskReview, 'Last task review retrieved successfully');
+});
+
 module.exports = {
+    getLastReviewForStudent,
     create,
     getAll,
     getById,
