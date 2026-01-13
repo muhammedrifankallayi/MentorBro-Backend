@@ -9,7 +9,7 @@ echo "📥 Pulling latest code"
 git pull origin main
 
 echo "📦 Installing dependencies"
-npm install --force
+npm i
 
 echo "🏗️ Building Angular app"
 npm run build
