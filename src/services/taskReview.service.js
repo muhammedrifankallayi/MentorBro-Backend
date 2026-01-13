@@ -59,6 +59,10 @@ const getAll = async (queryParams = {}) => {
         reviewStatus,
         isPaymentOrderd,
         isPaymentCompleted,
+        scheduledDateFrom,
+        scheduledDateTo,
+        endDateFrom,
+        endDateTo,
     } = queryParams;
 
     // Build filter
@@ -82,6 +86,32 @@ const getAll = async (queryParams = {}) => {
     if (reviewStatus) filter.reviewStatus = reviewStatus;
     if (isPaymentOrderd !== undefined) filter.isPaymentOrderd = isPaymentOrderd === 'true';
     if (isPaymentCompleted !== undefined) filter.isPaymentCompleted = isPaymentCompleted === 'true';
+
+    // Scheduled Date Range Filter
+    if (scheduledDateFrom || scheduledDateTo) {
+        filter.scheduledDate = {};
+        if (scheduledDateFrom) {
+            filter.scheduledDate.$gte = new Date(scheduledDateFrom);
+        }
+        if (scheduledDateTo) {
+            const date = new Date(scheduledDateTo);
+            date.setHours(23, 59, 59, 999); // Include the entire end day
+            filter.scheduledDate.$lte = date;
+        }
+    }
+
+    // End Date Range Filter
+    if (endDateFrom || endDateTo) {
+        filter.endDate = {};
+        if (endDateFrom) {
+            filter.endDate.$gte = new Date(endDateFrom);
+        }
+        if (endDateTo) {
+            const date = new Date(endDateTo);
+            date.setHours(23, 59, 59, 999); // Include the entire end day
+            filter.endDate.$lte = date;
+        }
+    }
 
     // Build sort
     const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
