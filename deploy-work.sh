@@ -9,10 +9,10 @@ echo "📥 Pulling latest code"
 git pull origin main
 
 echo "📦 Installing dependencies"
-npm i --force
+npm i
 
 echo "🏗️ Building Angular app"
-npx ng build
+npx npm run build
 
 echo "🧹 Cleaning old build"
 rm -rf /var/www/work/*
