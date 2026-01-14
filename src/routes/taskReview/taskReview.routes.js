@@ -18,6 +18,7 @@ router.post('/', taskReviewController.create);
 router.patch('/bulk-update', taskReviewController.bulkUpdate);
 router.patch('/:id/cancel', taskReviewController.cancel);
 router.patch('/:id/assign-reviewer', taskReviewController.assignReviewer);
+router.patch('/:id/unassign-reviewer', taskReviewController.unassignReviewer);
 
 // Admin only routes
 router.put('/:id', taskReviewController.update);

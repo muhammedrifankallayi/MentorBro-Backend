@@ -157,6 +157,17 @@ const getAdminStats = catchAsync(async (req, res) => {
     ApiResponse.success(res, stats, 'Admin stats retrieved successfully');
 });
 
+/**
+ * @desc    Unassign reviewer from task review
+ * @route   PATCH /api/v1/task-review/:id/unassign-reviewer
+ * @access  Protected (Admin)
+ */
+const unassignReviewer = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const taskReview = await taskReviewService.unassignReviewer(id);
+    ApiResponse.success(res, taskReview, 'Reviewer unassigned successfully');
+});
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -168,6 +179,7 @@ module.exports = {
     remove,
     cancel,
     assignReviewer,
+    unassignReviewer,
     getNextWeekForStudent,
     bulkUpdate,
     getReviewerEarnings,

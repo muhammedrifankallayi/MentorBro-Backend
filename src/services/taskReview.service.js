@@ -414,6 +414,53 @@ const assignReviewer = async (id, reviewerId) => {
 };
 
 /**
+ * Unassign reviewer from a task review
+ * @param {string} id - Task review ID
+ * @returns {Promise<Object>} Updated task review
+ */
+const unassignReviewer = async (id) => {
+    // First check if task review exists
+    const taskReview = await TaskReview.findById(id);
+
+    if (!taskReview) {
+        throw new AppError('Task review not found', 404);
+    }
+
+    // Check if task review is already cancelled
+    if (taskReview.isCancelled) {
+        throw new AppError('Cannot unassign reviewer from a cancelled task review', 400);
+    }
+
+    // Check if task review is already completed
+    if (taskReview.isReviewCompleted) {
+        throw new AppError('Cannot unassign reviewer from a completed task review', 400);
+    }
+
+    // Update the reviewer to null
+    const updatedTaskReview = await TaskReview.findByIdAndUpdate(
+        id,
+        { reviewer: null },
+        {
+            new: true,
+            runValidators: true,
+        }
+    )
+        .populate({
+            path: 'student',
+            select: 'name email batch',
+            populate: {
+                path: 'batch',
+                select: 'name',
+            },
+        })
+        .populate('program', 'name totalWeeks')
+        .populate('programTask', 'name week')
+        .populate('reviewer', 'fullName username email mobileNo');
+
+    return updatedTaskReview;
+};
+
+/**
  * Get next week program task for a student based on their last completed review
  * @param {string} studentId - Student ID
  * @returns {Promise<Object>} Next program task or current if re-review needed
@@ -758,6 +805,7 @@ module.exports = {
     remove,
     cancel,
     assignReviewer,
+    unassignReviewer,
     getNextWeekForStudent,
     bulkUpdate,
     getReviewerEarnings,

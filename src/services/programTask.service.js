@@ -150,24 +150,6 @@ const getNextWeek = async (programId) => {
     return { nextWeek };
 };
 
-/**
- * Update all program tasks cost to a specified value
- * @param {number} cost - Cost value to set
- * @returns {Promise<Object>} Update result
- */
-const updateAllCost = async (cost) => {
-    const result = await ProgramTask.updateMany(
-        {},
-        { $set: { cost: cost } }
-    );
-
-    return {
-        modifiedCount: result.modifiedCount,
-        matchedCount: result.matchedCount,
-        cost: cost,
-    };
-};
-
 module.exports = {
     create,
     getAll,
@@ -176,6 +158,6 @@ module.exports = {
     update,
     remove,
     getNextWeek,
-    updateAllCost,
 };
+
 
