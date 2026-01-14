@@ -71,6 +71,16 @@ const getNextWeek = catchAsync(async (req, res) => {
     ApiResponse.success(res, result, 'Next week number retrieved successfully');
 });
 
+/**
+ * @desc    Update all program tasks cost to 120 (Test API)
+ * @route   GET /api/v1/program-task/update-all-cost
+ * @access  Public
+ */
+const updateAllCost = catchAsync(async (req, res) => {
+    const result = await programTaskService.updateAllCost(120);
+    ApiResponse.success(res, result, 'All program tasks cost updated to 120');
+});
+
 module.exports = {
     create,
     getAll,
@@ -79,5 +89,6 @@ module.exports = {
     update,
     remove,
     getNextWeek,
+    updateAllCost,
 };
 

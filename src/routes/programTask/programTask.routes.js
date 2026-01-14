@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', programTaskController.getAll);
+router.get('/update-all-cost', programTaskController.updateAllCost);
 router.get('/next-week/:programId', programTaskController.getNextWeek);
 router.get('/program/:programId', programTaskController.getByProgramId);
 router.get('/:id', programTaskController.getById);

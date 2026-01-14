@@ -24,6 +24,14 @@ const create = async (reviewData) => {
         }
     }
 
+    // Fetch program task cost and set as paymentAmount
+    if (reviewData.programTask) {
+        const programTask = await ProgramTask.findById(reviewData.programTask);
+        if (programTask) {
+            reviewData.paymentAmount = programTask.cost || 0;
+        }
+    }
+
     const taskReview = await TaskReview.create(reviewData);
 
     // Fetch the created document with populated fields
