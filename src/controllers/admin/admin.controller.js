@@ -91,6 +91,17 @@ const updateStudentApproval = catchAsync(async (req, res) => {
     ApiResponse.success(res, { student }, 'Student approval status updated successfully');
 });
 
+/**
+ * @desc    Get students by batch ID
+ * @route   GET /api/v1/admin/students/batch/:batchId
+ * @access  Admin only
+ */
+const getStudentsByBatch = catchAsync(async (req, res) => {
+    const { batchId } = req.params;
+    const result = await studentService.getByBatch(batchId, req.query);
+    ApiResponse.list(res, result.students, result.pagination, 'Students retrieved successfully');
+});
+
 module.exports = {
     register,
     login,
@@ -99,6 +110,7 @@ module.exports = {
     updatePassword,
     getStudentsByApprovalStatus,
     updateStudentApproval,
+    getStudentsByBatch,
 };
 
 

@@ -18,6 +18,7 @@ router.patch('/update-password', adminController.updatePassword);
 
 // Student management routes
 router.get('/students/status/:status', adminController.getStudentsByApprovalStatus);
+router.get('/students/batch/:batchId', adminController.getStudentsByBatch);
 router.patch('/students/:id/approval', adminController.updateStudentApproval);
 
 module.exports = router;

@@ -246,6 +246,65 @@ const updateProfile = async (studentId, updateData) => {
     return student;
 };
 
+/**
+ * Get students by batch ID
+ * @param {string} batchId - Batch ID to filter by
+ * @param {Object} queryParams - Query parameters for pagination and search
+ */
+const getByBatch = async (batchId, queryParams = {}) => {
+    const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        search,
+        approvalStatus,
+    } = queryParams;
+
+    // Build filter
+    const filter = { batch: batchId };
+
+    // Add approval status filter if provided
+    if (approvalStatus) {
+        filter.approvalStatus = approvalStatus;
+    }
+
+    // Add search filter
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+        ];
+    }
+
+    // Build sort
+    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Execute query
+    const [students, total] = await Promise.all([
+        Student.find(filter)
+            .populate('batch', 'name startOn endedOn')
+            .populate('program', 'name totalWeeks')
+            .sort(sort)
+            .skip(skip)
+            .limit(parseInt(limit)),
+        Student.countDocuments(filter),
+    ]);
+
+    return {
+        students,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit),
+        },
+    };
+};
+
 module.exports = {
     signToken,
     createSendToken,
@@ -256,6 +315,7 @@ module.exports = {
     updateProfile,
     getByApprovalStatus,
     updateApprovalStatus,
+    getByBatch,
 };
 
 
