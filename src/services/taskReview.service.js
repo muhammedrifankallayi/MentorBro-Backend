@@ -18,9 +18,9 @@ const create = async (reviewData) => {
             isCancelled: { $in: [false, null, undefined] },
         });
 
-        // If exists and is not a re-review, don't allow creation
-        if (existingReview && !reviewData.isReReview) {
-            throw new AppError('A task review already exists for this program task. Only re-reviews are allowed.', 400);
+        // If exists and previous review status is not 'failed', don't allow creation
+        if (existingReview && existingReview.reviewStatus !== 'failed') {
+            throw new AppError('A task review already exists for this program task. New review is only allowed if previous review status is failed.', 400);
         }
     }
 
