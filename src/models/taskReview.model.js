@@ -92,6 +92,19 @@ const taskReviewSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        re_reviewDetails: {
+            fineAmount: {
+                type: Number,
+                default: 0,
+            },
+            paymentDate: {
+                type: Date,
+            },
+            proof: {
+                type: String,
+                trim: true,
+            },
+        },
     },
     {
         timestamps: true,

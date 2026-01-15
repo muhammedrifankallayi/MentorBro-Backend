@@ -497,8 +497,8 @@ const getNextWeekForStudent = async (studentId) => {
     const programId = lastReview.program._id;
     const currentWeek = lastReview.programTask.week;
 
-    // If it's a re-review → same week, else → week + 1
-    const targetWeek = lastReview.isReReview ? currentWeek : currentWeek + 1;
+    // If status is 'failed' → same week (re-review), else → week + 1
+    const targetWeek = lastReview.reviewStatus === 'failed' ? currentWeek : currentWeek + 1;
 
     const nextTask = await ProgramTask.findOne({
         program: programId,

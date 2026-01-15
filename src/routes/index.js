@@ -7,6 +7,7 @@ const programRoutes = require('./program');
 const programTaskRoutes = require('./programTask');
 const taskReviewRoutes = require('./taskReview');
 const webhookRoutes = require('./webhook/webhook.routes');
+const uploadRoutes = require('./upload');
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.use('/program', programRoutes);
 router.use('/program-task', programTaskRoutes);
 router.use('/task-review', taskReviewRoutes);
 router.use('/webhook', webhookRoutes);
+router.use('/upload', uploadRoutes);
 
 module.exports = router;
 
