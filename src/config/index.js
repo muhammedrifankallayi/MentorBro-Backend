@@ -23,6 +23,7 @@ module.exports = {
             'https://learn.yourmentorbro.com',
             'https://work.yourmentorbro.com',
             'https://manage.yourmentorbro.com',
+
             process.env.CORS_ORIGIN,
         ].filter(Boolean),
         credentials: true,
