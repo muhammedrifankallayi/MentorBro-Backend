@@ -67,6 +67,7 @@ const getAll = async (queryParams = {}) => {
         reviewStatus,
         isPaymentOrderd,
         isPaymentCompleted,
+        isReReview,
         scheduledDateFrom,
         scheduledDateTo,
         endDateFrom,
@@ -94,6 +95,7 @@ const getAll = async (queryParams = {}) => {
     if (reviewStatus) filter.reviewStatus = reviewStatus;
     if (isPaymentOrderd !== undefined) filter.isPaymentOrderd = isPaymentOrderd === 'true';
     if (isPaymentCompleted !== undefined) filter.isPaymentCompleted = isPaymentCompleted === 'true';
+    if (isReReview !== undefined) filter.isReReview = isReReview === 'true';
 
     // Scheduled Date Range Filter
     if (scheduledDateFrom || scheduledDateTo) {
