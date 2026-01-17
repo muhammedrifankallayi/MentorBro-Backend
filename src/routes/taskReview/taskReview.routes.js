@@ -7,6 +7,7 @@ router.use(protect);
 
 // Protected routes
 router.get('/admin/stats', restrictTo('admin'), taskReviewController.getAdminStats);
+router.get('/sync-all-pending-tasks', restrictTo('admin'), taskReviewController.syncAllPendingTasks);
 router.get('/', taskReviewController.getAll);
 router.get('/student/:studentId', taskReviewController.getByStudentId);
 router.get('/reviewer/:reviewerId/earnings', taskReviewController.getReviewerEarnings);
@@ -19,6 +20,7 @@ router.patch('/bulk-update', taskReviewController.bulkUpdate);
 router.patch('/:id/cancel', taskReviewController.cancel);
 router.patch('/:id/assign-reviewer', taskReviewController.assignReviewer);
 router.patch('/:id/unassign-reviewer', taskReviewController.unassignReviewer);
+router.get('/:id/sync-pending-tasks', taskReviewController.syncPendingTasks);
 
 // Admin only routes
 router.put('/:id', taskReviewController.update);

@@ -168,6 +168,27 @@ const unassignReviewer = catchAsync(async (req, res) => {
     ApiResponse.success(res, taskReview, 'Reviewer unassigned successfully');
 });
 
+/**
+ * @desc    Sync pending tasks for a task review
+ * @route   GET /api/v1/task-review/:id/sync-pending-tasks
+ * @access  Protected
+ */
+const syncPendingTasks = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const taskReview = await taskReviewService.syncPendingTasks(id);
+    ApiResponse.success(res, taskReview, 'Pending tasks synced successfully');
+});
+
+/**
+ * @desc    Sync pending tasks for all task reviews
+ * @route   GET /api/v1/task-review/sync-all-pending-tasks
+ * @access  Admin only
+ */
+const syncAllPendingTasks = catchAsync(async (req, res) => {
+    const result = await taskReviewService.syncAllPendingTasks();
+    ApiResponse.success(res, result, 'All pending tasks synced successfully');
+});
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -184,5 +205,7 @@ module.exports = {
     bulkUpdate,
     getReviewerEarnings,
     getAdminStats,
+    syncPendingTasks,
+    syncAllPendingTasks,
 };
 

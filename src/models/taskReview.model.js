@@ -37,6 +37,10 @@ const taskReviewSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
+        pendingTasks: {
+            type: [String],
+            default: [],
+        },
         scheduledDate: {
             type: Date,
             required: [true, 'Please provide scheduled date'],

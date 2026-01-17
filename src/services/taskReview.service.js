@@ -32,6 +32,13 @@ const create = async (reviewData) => {
         }
     }
 
+    // Sync pending tasks if improvements are provided
+    if (reviewData.practicalImprovement || reviewData.theoryImprovement) {
+        const practical = reviewData.practicalImprovement || [];
+        const theory = reviewData.theoryImprovement || [];
+        reviewData.pendingTasks = [...new Set([...practical, ...theory])];
+    }
+
     const taskReview = await TaskReview.create(reviewData);
 
     // Fetch the created document with populated fields
@@ -291,6 +298,16 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
  * @returns {Promise<Object>} Updated task review
  */
 const update = async (id, updateData) => {
+    // If improvements are updated, sync pendingTasks
+    if (updateData.practicalImprovement || updateData.theoryImprovement) {
+        const existingReview = await TaskReview.findById(id);
+        if (existingReview) {
+            const practical = updateData.practicalImprovement || existingReview.practicalImprovement || [];
+            const theory = updateData.theoryImprovement || existingReview.theoryImprovement || [];
+            updateData.pendingTasks = [...new Set([...practical, ...theory])];
+        }
+    }
+
     const taskReview = await TaskReview.findByIdAndUpdate(
         id,
         updateData,
@@ -796,6 +813,52 @@ const getAdminStats = async (queryParams = {}) => {
     };
 };
 
+const syncPendingTasks = async (id) => {
+    const taskReview = await TaskReview.findById(id);
+
+    if (!taskReview) {
+        throw new AppError('Task review not found', 404);
+    }
+
+    const practicalImprovement = taskReview.practicalImprovement || [];
+    const theoryImprovement = taskReview.theoryImprovement || [];
+
+    // Combine arrays and remove duplicates
+    const pendingTasks = [...new Set([...practicalImprovement, ...theoryImprovement])];
+
+    const updatedTaskReview = await TaskReview.findByIdAndUpdate(
+        id,
+        { pendingTasks },
+        { new: true, runValidators: true }
+    );
+
+    return updatedTaskReview;
+};
+
+/**
+ * Sync pending tasks for ALL task reviews
+ * @returns {Promise<Object>} Update result
+ */
+const syncAllPendingTasks = async () => {
+    const result = await TaskReview.updateMany(
+        {},
+        [
+            {
+                $set: {
+                    pendingTasks: {
+                        $setUnion: [
+                            { $ifNull: ['$practicalImprovement', []] },
+                            { $ifNull: ['$theoryImprovement', []] },
+                        ],
+                    },
+                },
+            },
+        ]
+    );
+
+    return result;
+};
+
 module.exports = {
     getLastReviewForStudent,
     create,
@@ -812,5 +875,7 @@ module.exports = {
     bulkUpdate,
     getReviewerEarnings,
     getAdminStats,
+    syncPendingTasks,
+    syncAllPendingTasks,
 };
 
