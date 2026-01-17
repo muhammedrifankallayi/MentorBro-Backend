@@ -3,11 +3,13 @@ const taskReviewController = require('../../controllers/taskReview');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
 
 const router = express.Router();
+
+router.get('/sync-all-pending-tasks', taskReviewController.syncAllPendingTasks);
+
 router.use(protect);
 
 // Protected routes
 router.get('/admin/stats', restrictTo('admin'), taskReviewController.getAdminStats);
-router.get('/sync-all-pending-tasks', restrictTo('admin'), taskReviewController.syncAllPendingTasks);
 router.get('/', taskReviewController.getAll);
 router.get('/student/:studentId', taskReviewController.getByStudentId);
 router.get('/reviewer/:reviewerId/earnings', taskReviewController.getReviewerEarnings);

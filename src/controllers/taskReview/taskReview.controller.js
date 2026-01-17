@@ -182,7 +182,7 @@ const syncPendingTasks = catchAsync(async (req, res) => {
 /**
  * @desc    Sync pending tasks for all task reviews
  * @route   GET /api/v1/task-review/sync-all-pending-tasks
- * @access  Admin only
+ * @access  Public
  */
 const syncAllPendingTasks = catchAsync(async (req, res) => {
     const result = await taskReviewService.syncAllPendingTasks();
