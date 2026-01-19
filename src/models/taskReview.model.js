@@ -29,14 +29,6 @@ const taskReviewSchema = new mongoose.Schema(
             min: [0, 'Score cannot be negative'],
             max: [100, 'Score cannot exceed 100'],
         },
-        practicalImprovement: {
-            type: [String],
-            default: [],
-        },
-        theoryImprovement: {
-            type: [String],
-            default: [],
-        },
         pendingTasks: {
             type: [String],
             default: [],

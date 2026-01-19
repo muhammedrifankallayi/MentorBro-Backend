@@ -60,11 +60,54 @@ const updateMe = catchAsync(async (req, res) => {
     ApiResponse.success(res, student, 'Profile updated successfully');
 });
 
+/**
+ * @desc    Update current student password
+ * @route   PATCH /api/v1/student/update-my-password
+ * @access  Private
+ */
+const updateMyPassword = catchAsync(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const student = await studentService.updatePassword(req.user._id, currentPassword, newPassword);
+    const { token, student: studentData } = studentService.createSendToken(student, 200, res);
+
+    ApiResponse.success(res, { student: studentData, token }, 'Password updated successfully');
+});
+
+/**
+ * @desc    Forgot password
+ * @route   POST /api/v1/student/forgot-password
+ * @access  Public
+ */
+const forgotPassword = catchAsync(async (req, res) => {
+    const { email, resetUrlBase } = req.body;
+
+    // Default reset URL base if not provided (should ideally come from frontend)
+    const urlBase = resetUrlBase || `${req.protocol}://${req.get('host')}/reset-password`;
+
+    await studentService.forgotPassword(email, urlBase);
+    ApiResponse.success(res, null, 'Token sent to email!');
+});
+
+/**
+ * @desc    Reset password
+ * @route   PATCH /api/v1/student/reset-password/:token
+ * @access  Public
+ */
+const resetPassword = catchAsync(async (req, res) => {
+    const student = await studentService.resetPassword(req.params.token, req.body.password);
+    const { token, student: studentData } = studentService.createSendToken(student, 200, res);
+
+    ApiResponse.success(res, { student: studentData, token }, 'Password reset successfully');
+});
+
 module.exports = {
     register,
     login,
     logout,
     getMe,
     updateMe,
+    updateMyPassword,
+    forgotPassword,
+    resetPassword,
 };
 

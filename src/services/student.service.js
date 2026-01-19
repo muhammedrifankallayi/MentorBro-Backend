@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { Student } = require('../models');
-const { AppError } = require('../utils');
+const { AppError, mailer } = require('../utils');
 const config = require('../config');
 
 /**
@@ -305,11 +306,71 @@ const getByBatch = async (batchId, queryParams = {}) => {
     };
 };
 
+/**
+ * Send password reset email
+ * @param {string} email - Student email
+ * @param {string} resetUrl - Frontend reset URL
+ */
+const forgotPassword = async (email, resetUrlBase) => {
+    // 1) Get student based on POSTed email
+    const student = await Student.findOne({ email });
+    if (!student) {
+        throw new AppError('There is no student with email address.', 404);
+    }
+
+    // 2) Generate the random reset token
+    const resetToken = student.createPasswordResetToken();
+    await student.save({ validateBeforeSave: false });
+
+    // 3) Send it to student's email
+    try {
+        const resetURL = `${resetUrlBase}/${resetToken}`;
+        await mailer.sendPasswordResetEmail(student.email, resetToken, resetURL);
+    } catch (err) {
+        student.passwordResetToken = undefined;
+        student.passwordResetExpires = undefined;
+        await student.save({ validateBeforeSave: false });
+
+        throw new AppError('There was an error sending the email. Try again later!', 500);
+    }
+};
+
+/**
+ * Reset password
+ * @param {string} token - Reset token
+ * @param {string} password - New password
+ */
+const resetPassword = async (token, password) => {
+    // 1) Get student based on the token
+    const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+    const student = await Student.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() },
+    });
+
+    // 2) If token has not expired, and there is student, set the new password
+    if (!student) {
+        throw new AppError('Token is invalid or has expired', 400);
+    }
+    student.password = password;
+    student.passwordResetToken = undefined;
+    student.passwordResetExpires = undefined;
+    await student.save();
+
+    return student;
+};
+
 module.exports = {
     signToken,
     createSendToken,
     register,
     login,
+    forgotPassword,
+    resetPassword,
     getById,
     updatePassword,
     updateProfile,
