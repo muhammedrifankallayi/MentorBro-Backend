@@ -101,6 +101,10 @@ const taskReviewSchema = new mongoose.Schema(
                 trim: true,
             },
         },
+        roundBackDays: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,
