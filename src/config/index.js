@@ -49,4 +49,11 @@ module.exports = {
         apiKey: process.env.CLOUDINARY_API_KEY,
         apiSecret: process.env.CLOUDINARY_API_SECRET,
     },
+
+    // Whapi Configuration
+    whapi: {
+        token: process.env.WHAPI_TOKEN,
+        apiUrl: process.env.WHAPI_API_URL || 'https://gate.whapi.cloud',
+        defaultNumber: process.env.WHAPI_DEFAULT_NUMBER || '8157867616',
+    },
 };
