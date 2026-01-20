@@ -1,0 +1,157 @@
+{
+    "info": {
+        "_postman_id": "whapi-integration-collection",
+        "name": "MentorBro WhatsApp API (Whapi)",
+        "description": "Collection for testing the Whapi.Cloud WhatsApp integration in MentorBro Backend.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Send Text Message (Direct)",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"to\": \"8157867616\",\n    \"message\": \"Hello from MentorBro! This is a test message.\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/whatsapp/send-text",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "whatsapp",
+                        "send-text"
+                    ]
+                },
+                "description": "Sends a direct text message to a specific number. If 'to' is omitted, it uses the default number 8157867616."
+            },
+            "response": []
+        },
+        {
+            "name": "Send Text Message (Default Number)",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"message\": \"This message is sent to the default number configured in the backend.\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/whatsapp/send-text",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "whatsapp",
+                        "send-text"
+                    ]
+                },
+                "description": "Sends a message to the default number (8157867616) by omitting the 'to' field."
+            },
+            "response": []
+        },
+        {
+            "name": "Send Review Scheduled Notification",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"to\": \"8157867616\",\n    \"type\": \"REVIEW_SCHEDULED\",\n    \"data\": {\n        \"studentName\": \"Postman Tester\",\n        \"taskName\": \"Whapi Integration\",\n        \"date\": \"2026-01-25\",\n        \"time\": \"10:00 AM\"\n    }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/whatsapp/send-notification",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "whatsapp",
+                        "send-notification"
+                    ]
+                },
+                "description": "Sends a formatted 'Review Scheduled' WhatsApp notification."
+            },
+            "response": []
+        },
+        {
+            "name": "Send Reminder Notification",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"to\": \"8157867616\",\n    \"type\": \"REVIEW_REMINDER\",\n    \"data\": {\n        \"studentName\": \"Postman Tester\",\n        \"taskName\": \"Whapi Integration\",\n        \"time\": \"2:00 PM\"\n    }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/v1/whatsapp/send-notification",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "whatsapp",
+                        "send-notification"
+                    ]
+                },
+                "description": "Sends a formatted 'Reminder' WhatsApp notification."
+            },
+            "response": []
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:5000",
+            "type": "string"
+        }
+    ]
+}

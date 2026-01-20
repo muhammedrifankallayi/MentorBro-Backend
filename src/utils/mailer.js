@@ -1,62 +1,69 @@
 const nodemailer = require('nodemailer');
 const logger = require('./logger');
 
+const SystemConfig = require('../models/systemConfig.model');
+
 /**
  * Create and configure nodemailer transporter
- * @returns {nodemailer.Transporter} Configured transporter instance
+ * @returns {Promise<nodemailer.Transporter>} Configured transporter instance
  */
-const createTransporter = () => {
-  // Validate required environment variables
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_PORT) {
-    logger.error('Email configuration is missing required environment variables');
-    throw new Error('Email configuration is incomplete');
-  }
+const createTransporter = async () => {
+  try {
+    const dbConfig = await SystemConfig.findOne({ isActive: true });
 
-  const config = {
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT, 10),
-    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  };
+    let host = dbConfig?.brevo?.host || process.env.EMAIL_HOST;
+    let port = dbConfig?.brevo?.port ? parseInt(dbConfig.brevo.port, 10) : parseInt(process.env.EMAIL_PORT, 10);
+    let user = dbConfig?.brevo?.user || process.env.EMAIL_USER;
+    let pass = dbConfig?.brevo?.password || process.env.EMAIL_PASSWORD;
 
-  // Optional: Add additional SMTP options
-  if (process.env.EMAIL_TLS_REJECT_UNAUTHORIZED === 'false') {
-    config.tls = {
-      rejectUnauthorized: false,
-    };
-  }
-
-  const transporter = nodemailer.createTransport(config);
-
-  // Verify transporter configuration
-  transporter.verify((error, success) => {
-    if (error) {
-      logger.error('Email transporter verification failed:', error);
-    } else {
-      logger.info('Email server is ready to send messages');
+    // Validate required configuration
+    if (!host || !port) {
+      logger.error('Email configuration is missing required parameters');
+      throw new Error('Email configuration is incomplete');
     }
-  });
 
-  return transporter;
+    const config = {
+      host: host,
+      port: port,
+      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+      auth: {
+        user: user,
+        pass: pass,
+      },
+    };
+
+    // Optional: Add additional SMTP options
+    if (process.env.EMAIL_TLS_REJECT_UNAUTHORIZED === 'false') {
+      config.tls = {
+        rejectUnauthorized: false,
+      };
+    }
+
+    const transporter = nodemailer.createTransport(config);
+
+    // Verify transporter configuration
+    transporter.verify((error, success) => {
+      if (error) {
+        logger.error('Email transporter verification failed:', error);
+      } else {
+        logger.info('Email server is ready to send messages');
+      }
+    });
+
+    return transporter;
+  } catch (error) {
+    logger.error('Error creating email transporter:', error.message);
+    throw error;
+  }
 };
 
 /**
  * Send an email
  * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.subject - Email subject
- * @param {string} options.text - Plain text body
- * @param {string} options.html - HTML body
- * @param {string} options.from - Sender email (optional, uses default from env)
- * @param {Array} options.attachments - Array of attachment objects (optional)
- * @returns {Promise} Promise that resolves with email info
  */
 const sendEmail = async (options) => {
   try {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
 
     const mailOptions = {
       from: options.from || `${process.env.EMAIL_FROM_NAME || 'MentorBro'} <${process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER}>`,

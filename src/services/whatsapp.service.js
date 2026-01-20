@@ -1,5 +1,7 @@
 const whapi = require('../utils/whapi');
 const logger = require('../utils/logger');
+const config = require('../config');
+const SystemConfig = require('../models/systemConfig.model');
 
 /**
  * Service for WhatsApp related operations
@@ -12,15 +14,19 @@ class WhatsAppService {
      * @returns {Promise<Object>}
      */
     async sendTextMessage(to, message) {
-        if (!whapi.isConfigured()) {
+        if (!(await whapi.isConfigured())) {
             logger.warn('WhatsApp service requested but Whapi not configured');
             return { success: false, error: 'WhatsApp service not configured' };
         }
 
         try {
             // Use default number if 'to' is not provided
-            const config = require('../config');
-            const recipientNumber = to || config.whapi.defaultNumber;
+            let recipientNumber = to;
+
+            if (!recipientNumber) {
+                const dbConfig = await SystemConfig.findOne({ isActive: true });
+                recipientNumber = dbConfig?.whapi?.defaultNumber || config.whapi.defaultNumber;
+            }
 
             if (!recipientNumber) {
                 return { success: false, error: 'No recipient number provided and no default configured' };

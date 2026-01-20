@@ -1,18 +1,30 @@
 const config = require('../config');
 const logger = require('./logger');
+const SystemConfig = require('../models/systemConfig.model');
 
 /**
  * Whapi.Cloud utility for interacting with the Whapi API
  */
 class WhapiUtility {
-    constructor() {
-        this.token = config.whapi.token;
-        this.apiUrl = config.whapi.apiUrl;
-        this.headers = {
-            'accept': 'application/json',
-            'content-type': 'application/json',
-            'authorization': `Bearer ${this.token}`
-        };
+    /**
+     * Get current Whapi credentials from DB or Env
+     * @private
+     */
+    async _getCredentials() {
+        try {
+            const dbConfig = await SystemConfig.findOne({ isActive: true });
+
+            const token = dbConfig?.whapi?.token || config.whapi.token;
+            const apiUrl = dbConfig?.whapi?.apiUrl || config.whapi.apiUrl;
+
+            return { token, apiUrl };
+        } catch (error) {
+            // Fallback to env config if DB fails
+            return {
+                token: config.whapi.token,
+                apiUrl: config.whapi.apiUrl
+            };
+        }
     }
 
     /**
@@ -24,7 +36,13 @@ class WhapiUtility {
      */
     async sendTextMessage(to, body, options = {}) {
         try {
-            const url = `${this.apiUrl}/messages/text`;
+            const { token, apiUrl } = await this._getCredentials();
+
+            if (!token) {
+                throw new Error('Whapi token not configured');
+            }
+
+            const url = `${apiUrl}/messages/text`;
             const payload = {
                 to,
                 body,
@@ -33,7 +51,11 @@ class WhapiUtility {
 
             const response = await fetch(url, {
                 method: 'POST',
-                headers: this.headers,
+                headers: {
+                    'accept': 'application/json',
+                    'content-type': 'application/json',
+                    'authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -54,10 +76,11 @@ class WhapiUtility {
 
     /**
      * Check if Whapi is configured
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      */
-    isConfigured() {
-        return !!this.token;
+    async isConfigured() {
+        const { token } = await this._getCredentials();
+        return !!token;
     }
 }
 
