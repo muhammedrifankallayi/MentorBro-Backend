@@ -77,7 +77,8 @@ const remove = catchAsync(async (req, res) => {
  * @access  Protected
  */
 const cancel = catchAsync(async (req, res) => {
-    const taskReview = await taskReviewService.cancel(req.params.id);
+    const { cancellationReason } = req.body;
+    const taskReview = await taskReviewService.cancel(req.params.id, cancellationReason);
     ApiResponse.success(res, taskReview, 'Task review cancelled successfully');
 });
 

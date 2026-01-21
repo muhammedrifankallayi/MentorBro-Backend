@@ -373,12 +373,18 @@ const remove = async (id) => {
 /**
  * Cancel task review by ID
  * @param {string} id - Task review ID
+ * @param {string} cancellationReason - Reason for cancellation
  * @returns {Promise<Object>} Cancelled task review
  */
-const cancel = async (id) => {
+const cancel = async (id, cancellationReason) => {
+    const updateData = { isCancelled: true };
+    if (cancellationReason) {
+        updateData.cancellationReason = cancellationReason;
+    }
+
     const taskReview = await TaskReview.findByIdAndUpdate(
         id,
-        { isCancelled: true },
+        updateData,
         { new: true }
     )
         .populate({

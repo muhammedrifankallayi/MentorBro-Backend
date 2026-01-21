@@ -72,6 +72,10 @@ const taskReviewSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        cancellationReason: {
+            type: String,
+            trim: true,
+        },
         isActive: {
             type: Boolean,
             default: true,
