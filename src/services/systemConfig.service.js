@@ -42,6 +42,14 @@ const updateConfig = async (updateData) => {
             };
         }
 
+        // Handle boolean notification toggles
+        if (updateData.send_mail_on_reviewer_assign_to_student !== undefined) {
+            config.send_mail_on_reviewer_assign_to_student = updateData.send_mail_on_reviewer_assign_to_student;
+        }
+        if (updateData.receive_message_on_whatsapp_in_review_schedule !== undefined) {
+            config.receive_message_on_whatsapp_in_review_schedule = updateData.receive_message_on_whatsapp_in_review_schedule;
+        }
+
         await config.save();
     }
 

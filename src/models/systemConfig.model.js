@@ -18,6 +18,14 @@ const systemConfigSchema = new mongoose.Schema(
             privateKey: { type: String, trim: true },
             projectId: { type: String, trim: true }
         },
+        send_mail_on_reviewer_assign_to_student: {
+            type: Boolean,
+            default: true
+        },
+        receive_message_on_whatsapp_in_review_schedule: {
+            type: Boolean,
+            default: true
+        },
         isActive: {
             type: Boolean,
             default: true

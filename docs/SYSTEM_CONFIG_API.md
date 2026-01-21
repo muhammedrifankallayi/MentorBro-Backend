@@ -18,6 +18,8 @@ The configuration is stored in a single active document in the `systemconfigs` c
 | `firebase.clientEmail` | String | Firebase Client Email |
 | `firebase.privateKey` | String | Firebase Private Key |
 | `firebase.projectId` | String | Firebase Project ID |
+| `send_mail_on_reviewer_assign_to_student` | Boolean | Toggle email to student when reviewer is assigned (Default: `true`) |
+| `receive_message_on_whatsapp_in_review_schedule` | Boolean | Toggle WhatsApp message when review is scheduled (Default: `true`) |
 | `isActive` | Boolean | Status of the configuration (Default: `true`) |
 
 ---

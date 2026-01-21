@@ -1,6 +1,7 @@
 const express = require('express');
 const adminController = require('../../controllers/admin');
 const systemConfigRoutes = require('./systemConfig.routes');
+const mailRoutes = require('./mail.routes');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
 
 const router = express.Router();
@@ -19,6 +20,9 @@ router.patch('/update-password', adminController.updatePassword);
 
 // System Configuration routes
 router.use('/config', systemConfigRoutes);
+
+// Mail routes
+router.use('/mail', mailRoutes);
 
 // Student management routes
 router.get('/students/status/:status', adminController.getStudentsByApprovalStatus);

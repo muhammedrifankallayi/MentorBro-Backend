@@ -35,10 +35,10 @@ const create = async (reviewData) => {
     const taskReview = await TaskReview.create(reviewData);
 
     // Fetch the created document with populated fields
-    return await TaskReview.findById(taskReview._id)
+    const populatedReview = await TaskReview.findById(taskReview._id)
         .populate({
             path: 'student',
-            select: 'name email batch',
+            select: 'name email batch mobileNo',
             populate: {
                 path: 'batch',
                 select: 'name',
@@ -46,7 +46,40 @@ const create = async (reviewData) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
-        .populate('reviewer', 'username');
+        .populate('reviewer', 'username fullName');
+
+    // Send WhatsApp notification if enabled
+    try {
+        const SystemConfig = require('../models/systemConfig.model');
+        const whatsappService = require('./whatsapp.service');
+
+        const config = await SystemConfig.getSettings();
+
+        if (config.receive_message_on_whatsapp_in_review_schedule && populatedReview.student?.mobileNo) {
+            const formattedDate = new Date(populatedReview.scheduledDate).toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            await whatsappService.sendNotification(
+                populatedReview.student.mobileNo,
+                'REVIEW_SCHEDULED',
+                {
+                    studentName: populatedReview.student.name,
+                    taskName: populatedReview.programTask?.name || 'Task Review',
+                    date: formattedDate,
+                    time: populatedReview.scheduledTime
+                }
+            );
+        }
+    } catch (whatsappError) {
+        // Log but don't fail the operation if WhatsApp fails
+        console.error('Failed to send WhatsApp notification:', whatsappError.message);
+    }
+
+    return populatedReview;
 };
 
 /**
@@ -411,6 +444,29 @@ const assignReviewer = async (id, reviewerId) => {
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week')
         .populate('reviewer', 'fullName username email mobileNo');
+
+    // Send email notification to student if enabled
+    try {
+        const SystemConfig = require('../models/systemConfig.model');
+        const mailerService = require('./mailer.service');
+
+        const config = await SystemConfig.getSettings();
+
+        if (config.send_mail_on_reviewer_assign_to_student && updatedTaskReview.student?.email) {
+            await mailerService.sendReviewerAssignedEmail(
+                { email: updatedTaskReview.student.email, name: updatedTaskReview.student.name },
+                { fullName: updatedTaskReview.reviewer?.fullName, username: updatedTaskReview.reviewer?.username },
+                {
+                    scheduledDate: updatedTaskReview.scheduledDate,
+                    scheduledTime: updatedTaskReview.scheduledTime,
+                    programTask: updatedTaskReview.programTask
+                }
+            );
+        }
+    } catch (emailError) {
+        // Log but don't fail the operation if email fails
+        console.error('Failed to send reviewer assigned email:', emailError.message);
+    }
 
     return updatedTaskReview;
 };
