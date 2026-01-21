@@ -78,7 +78,7 @@ const hasValidCredentials = async (section) => {
         case 'whapi':
             return !!(config.whapi && config.whapi.token);
         case 'brevo':
-            return !!(config.brevo && config.brevo.host && config.brevo.user && config.brevo.password);
+            return !!(config.brevo && config.brevo.apiKey);
         case 'firebase':
             return !!(config.firebase && config.firebase.clientEmail && config.firebase.privateKey && config.firebase.projectId);
         default:

@@ -11,10 +11,9 @@ The configuration is stored in a single active document in the `systemconfigs` c
 | `whapi.token` | String | Whapi.Cloud API Bearer Token |
 | `whapi.apiUrl` | String | Whapi.Cloud Base URL (Default: `https://gate.whapi.cloud`) |
 | `whapi.defaultNumber` | String | Default WhatsApp number for notifications |
-| `brevo.host` | String | SMTP Host for email relay |
-| `brevo.port` | Number | SMTP Port (e.g., 587) |
-| `brevo.user` | String | SMTP Username/Email |
-| `brevo.password` | String | SMTP Password |
+| `brevo.apiKey` | String | Brevo HTTP API Key |
+| `brevo.senderEmail` | String | Sender email address (Default: `noreply@yourmentorbro.com`) |
+| `brevo.senderName` | String | Sender name (Default: `MentorBro`) |
 | `firebase.clientEmail` | String | Firebase Client Email |
 | `firebase.privateKey` | String | Firebase Private Key |
 | `firebase.projectId` | String | Firebase Project ID |

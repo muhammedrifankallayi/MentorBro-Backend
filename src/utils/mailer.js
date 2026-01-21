@@ -1,90 +1,84 @@
-const nodemailer = require('nodemailer');
 const logger = require('./logger');
-
 const SystemConfig = require('../models/systemConfig.model');
 
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+
 /**
- * Create and configure nodemailer transporter
- * @returns {Promise<nodemailer.Transporter>} Configured transporter instance
+ * Get Brevo API configuration
+ * @returns {Promise<Object>} Brevo config with apiKey, senderEmail, senderName
  */
-const createTransporter = async () => {
-  try {
-    const dbConfig = await SystemConfig.findOne({ isActive: true });
+const getBrevoConfig = async () => {
+  const dbConfig = await SystemConfig.findOne({ isActive: true });
 
-    let host = dbConfig?.brevo?.host || process.env.EMAIL_HOST;
-    let port = dbConfig?.brevo?.port ? parseInt(dbConfig.brevo.port, 10) : parseInt(process.env.EMAIL_PORT, 10);
-    let user = dbConfig?.brevo?.user || process.env.EMAIL_USER;
-    let pass = dbConfig?.brevo?.password || process.env.EMAIL_PASSWORD;
-
-    // Validate required configuration
-    if (!host || !port) {
-      logger.error('Email configuration is missing required parameters');
-      throw new Error('Email configuration is incomplete');
-    }
-
-    const config = {
-      host: host,
-      port: port,
-      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: user,
-        pass: pass,
-      },
-    };
-
-    // Optional: Add additional SMTP options
-    if (process.env.EMAIL_TLS_REJECT_UNAUTHORIZED === 'false') {
-      config.tls = {
-        rejectUnauthorized: false,
-      };
-    }
-
-    const transporter = nodemailer.createTransport(config);
-
-    // Verify transporter configuration
-    transporter.verify((error, success) => {
-      if (error) {
-        logger.error('Email transporter verification failed:', error);
-      } else {
-        logger.info('Email server is ready to send messages');
-      }
-    });
-
-    return transporter;
-  } catch (error) {
-    logger.error('Error creating email transporter:', error.message);
-    throw error;
-  }
+  return {
+    apiKey: dbConfig?.brevo?.apiKey || process.env.BREVO_API_KEY,
+    senderEmail: dbConfig?.brevo?.senderEmail || process.env.EMAIL_FROM_ADDRESS || 'noreply@yourmentorbro.com',
+    senderName: dbConfig?.brevo?.senderName || process.env.EMAIL_FROM_NAME || 'MentorBro'
+  };
 };
 
 /**
- * Send an email
+ * Send an email using Brevo HTTP API
  * @param {Object} options - Email options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.subject - Email subject
+ * @param {string} options.html - HTML content
+ * @param {string} options.text - Plain text content (optional)
+ * @param {string} options.toName - Recipient name (optional)
+ * @returns {Promise<Object>} Result with success status
  */
 const sendEmail = async (options) => {
   try {
-    const transporter = await createTransporter();
+    const brevoConfig = await getBrevoConfig();
 
-    const mailOptions = {
-      from: options.from || `${process.env.EMAIL_FROM_NAME || 'MentorBro'} <${process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER}>`,
-      to: options.to,
+    if (!brevoConfig.apiKey) {
+      logger.error('Brevo API key not configured');
+      throw new Error('Email service not configured. Please set BREVO_API_KEY.');
+    }
+
+    // Build the email payload
+    const emailPayload = {
+      sender: {
+        email: brevoConfig.senderEmail,
+        name: brevoConfig.senderName
+      },
+      to: [{
+        email: options.to,
+        name: options.toName || options.to
+      }],
       subject: options.subject,
-      text: options.text,
-      html: options.html,
-      attachments: options.attachments || [],
+      htmlContent: options.html,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    // Add text content if provided
+    if (options.text) {
+      emailPayload.textContent = options.text;
+    }
 
-    logger.info(`Email sent successfully to ${options.to}. Message ID: ${info.messageId}`);
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'api-key': brevoConfig.apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailPayload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      logger.error('Brevo API error:', result);
+      throw new Error(result.message || 'Failed to send email via Brevo');
+    }
+
+    logger.info(`Email sent successfully to ${options.to}. Message ID: ${result.messageId}`);
 
     return {
       success: true,
-      messageId: info.messageId,
-      response: info.response,
+      messageId: result.messageId,
     };
   } catch (error) {
-    logger.error('Failed to send email:', error);
+    logger.error('Failed to send email via Brevo:', error.message);
     throw error;
   }
 };
@@ -114,7 +108,7 @@ const sendWelcomeEmail = async (email, name) => {
   `;
   const text = `Welcome to MentorBro, ${name}! We're excited to have you on board.`;
 
-  return sendEmail({ to: email, subject, html, text });
+  return sendEmail({ to: email, toName: name, subject, html, text });
 };
 
 /**
@@ -350,7 +344,7 @@ Best regards,
 The MentorBro Team
   `.trim();
 
-  return sendEmail({ to: email, subject, html, text });
+  return sendEmail({ to: email, toName: fullName, subject, html, text });
 };
 
 module.exports = {
@@ -360,5 +354,4 @@ module.exports = {
   sendVerificationEmail,
   sendNotificationEmail,
   sendReviewerCredentialsEmail,
-  createTransporter,
 };

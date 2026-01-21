@@ -8,10 +8,9 @@ const systemConfigSchema = new mongoose.Schema(
             defaultNumber: { type: String, trim: true }
         },
         brevo: {
-            host: { type: String, trim: true },
-            port: { type: Number },
-            user: { type: String, trim: true },
-            password: { type: String, trim: true }
+            apiKey: { type: String, trim: true },
+            senderEmail: { type: String, trim: true, default: 'noreply@yourmentorbro.com' },
+            senderName: { type: String, trim: true, default: 'MentorBro' }
         },
         firebase: {
             clientEmail: { type: String, trim: true },
