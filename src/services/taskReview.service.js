@@ -29,9 +29,12 @@ const create = async (reviewData) => {
         const programTask = await ProgramTask.findById(reviewData.programTask);
         if (programTask) {
             if (reviewData.isReReview) {
+                const fineAmount = (programTask.re_review_fine_amount && programTask.re_review_fine_amount > 0)
+                    ? programTask.re_review_fine_amount
+                    : 100;
                 reviewData.re_reviewDetails = {
                     ...reviewData.re_reviewDetails,
-                    fineAmount: programTask.re_review_fine_amount || 0
+                    fineAmount: fineAmount
                 };
             } else {
                 reviewData.paymentAmount = programTask.cost || 0;
@@ -52,7 +55,7 @@ const create = async (reviewData) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'username fullName');
 
     // Send WhatsApp notification if enabled
@@ -181,7 +184,7 @@ const getAll = async (queryParams = {}) => {
                 },
             })
             .populate('program', 'name totalWeeks')
-            .populate('programTask', 'name week')
+            .populate('programTask', 'name week re_review_fine_amount')
             .populate('reviewer', 'username fullName')
             .sort(sort)
             .skip(skip)
@@ -216,7 +219,7 @@ const getById = async (id) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week tasks')
+        .populate('programTask', 'name week tasks re_review_fine_amount')
         .populate('reviewer', 'username fullName');
 
     if (!taskReview) {
@@ -256,7 +259,7 @@ const getByStudentId = async (studentId, queryParams = {}) => {
                 },
             })
             .populate('program', 'name totalWeeks')
-            .populate('programTask', 'name week')
+            .populate('programTask', 'name week re_review_fine_amount')
             .populate('reviewer', 'username fullName')
             .sort(sort)
             .skip(skip)
@@ -305,7 +308,7 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
                 },
             })
             .populate('program', 'name totalWeeks')
-            .populate('programTask', 'name week')
+            .populate('programTask', 'name week re_review_fine_amount')
             .populate('reviewer', 'username fullName')
             .sort(sort)
             .skip(skip)
@@ -331,6 +334,43 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
  * @returns {Promise<Object>} Updated task review
  */
 const update = async (id, updateData) => {
+    // If programTask is being updated, we need to potentially recalculate costs
+    if (updateData.programTask || updateData.isReReview !== undefined) {
+        const currentReview = await TaskReview.findById(id);
+        if (!currentReview) {
+            throw new AppError('Task review not found', 404);
+        }
+
+        const programTaskId = updateData.programTask || currentReview.programTask;
+        const isReReview = updateData.isReReview !== undefined ? updateData.isReReview : currentReview.isReReview;
+
+        if (programTaskId) {
+            const programTask = await ProgramTask.findById(programTaskId);
+            if (programTask) {
+                if (isReReview) {
+                    const fineAmount = (programTask.re_review_fine_amount && programTask.re_review_fine_amount > 0)
+                        ? programTask.re_review_fine_amount
+                        : 100;
+
+                    // Maintain structure of re_reviewDetails
+                    updateData.re_reviewDetails = {
+                        ...(currentReview.re_reviewDetails ? currentReview.re_reviewDetails.toObject() : {}),
+                        fineAmount: fineAmount
+                    };
+                    updateData.paymentAmount = 0; // Clear standard payment if it becomes a re-review
+                } else {
+                    updateData.paymentAmount = programTask.cost || 0;
+                    // Clear re_reviewDetails if it's no longer a re-review
+                    updateData.re_reviewDetails = {
+                        fineAmount: 0,
+                        paymentDate: null,
+                        proof: null
+                    };
+                }
+            }
+        }
+    }
+
     const taskReview = await TaskReview.findByIdAndUpdate(
         id,
         updateData,
@@ -348,7 +388,7 @@ const update = async (id, updateData) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'username fullName');
 
     if (!taskReview) {
@@ -403,7 +443,7 @@ const cancel = async (id, cancellationReason) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'username fullName');
 
     if (!taskReview) {
@@ -455,7 +495,7 @@ const assignReviewer = async (id, reviewerId) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'fullName username email mobileNo');
 
     // Send email notification to student if enabled
@@ -525,7 +565,7 @@ const unassignReviewer = async (id) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'fullName username email mobileNo');
 
     return updatedTaskReview;
@@ -651,7 +691,7 @@ const getLastReviewForStudent = async (studentId) => {
             },
         })
         .populate('program', 'name totalWeeks')
-        .populate('programTask', 'name week')
+        .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'username fullName');
 
     if (!taskReview) {

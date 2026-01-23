@@ -112,6 +112,18 @@ const updateStudent = catchAsync(async (req, res) => {
     ApiResponse.success(res, { student }, 'Student updated successfully');
 });
 
+/**
+ * @desc    Impersonate student
+ * @route   POST /api/v1/admin/students/:id/impersonate
+ * @access  Admin only
+ */
+const impersonateStudent = catchAsync(async (req, res) => {
+    const student = await studentService.getById(req.params.id);
+    const token = studentService.signToken(student._id);
+
+    ApiResponse.success(res, { token }, 'Impersonation token generated successfully');
+});
+
 module.exports = {
     register,
     login,
@@ -122,6 +134,7 @@ module.exports = {
     updateStudentApproval,
     getStudentsByBatch,
     updateStudent,
+    impersonateStudent,
 };
 
 

@@ -10,6 +10,7 @@ const webhookRoutes = require('./webhook/webhook.routes');
 const uploadRoutes = require('./upload');
 const notificationRoutes = require('./notification.routes');
 const whatsappRoutes = require('./whatsapp.routes');
+const issueRoutes = require('./issue');
 
 
 const router = express.Router();
@@ -35,6 +36,7 @@ router.use('/webhook', webhookRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/issues', issueRoutes);
 
 
 module.exports = router;

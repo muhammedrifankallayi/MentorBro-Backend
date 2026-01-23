@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../../controllers/admin');
+const issueAdminController = require('../../controllers/issue/issue.admin.controller');
 const systemConfigRoutes = require('./systemConfig.routes');
 const mailRoutes = require('./mail.routes');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
@@ -29,6 +30,14 @@ router.get('/students/status/:status', adminController.getStudentsByApprovalStat
 router.get('/students/batch/:batchId', adminController.getStudentsByBatch);
 router.patch('/students/:id/approval', adminController.updateStudentApproval);
 router.put('/students/:id', adminController.updateStudent);
+router.post('/students/:id/impersonate', adminController.impersonateStudent);
+
+// Issue management routes
+router.get('/issues/stats', issueAdminController.getIssueStats);
+router.get('/issues', issueAdminController.getAllIssues);
+router.get('/issues/:id', issueAdminController.getIssueById);
+router.patch('/issues/:id/status', issueAdminController.updateIssueStatus);
+router.delete('/issues/:id', issueAdminController.deleteIssue);
 
 module.exports = router;
 
