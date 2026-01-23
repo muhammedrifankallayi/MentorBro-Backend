@@ -140,13 +140,11 @@ const remove = async (id) => {
  * @returns {Promise<Object>} Next week number
  */
 const getNextWeek = async (programId) => {
-    // Find the highest week number for this program
-    const lastTask = await ProgramTask.findOne({ program: programId })
-        .setOptions({ skipIsActiveFilter: true })
-        .sort({ week: -1 })
-        .select('week');
+    // Count total tasks (including inactive ones) for this program
+    const totalTasks = await ProgramTask.countDocuments({ program: programId })
+        .setOptions({ skipIsActiveFilter: true });
 
-    const nextWeek = lastTask ? lastTask.week + 1 : 1;
+    const nextWeek = totalTasks + 1;
 
     return { nextWeek };
 };
