@@ -30,6 +30,10 @@ const programTaskSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        re_review_fine_amount: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,

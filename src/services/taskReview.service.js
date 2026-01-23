@@ -24,11 +24,18 @@ const create = async (reviewData) => {
         }
     }
 
-    // Fetch program task cost and set as paymentAmount
+    // Fetch program task cost and set as paymentAmount or fineAmount
     if (reviewData.programTask) {
         const programTask = await ProgramTask.findById(reviewData.programTask);
         if (programTask) {
-            reviewData.paymentAmount = programTask.cost || 0;
+            if (reviewData.isReReview) {
+                reviewData.re_reviewDetails = {
+                    ...reviewData.re_reviewDetails,
+                    fineAmount: programTask.re_review_fine_amount || 0
+                };
+            } else {
+                reviewData.paymentAmount = programTask.cost || 0;
+            }
         }
     }
 
