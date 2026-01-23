@@ -142,6 +142,7 @@ const remove = async (id) => {
 const getNextWeek = async (programId) => {
     // Find the highest week number for this program
     const lastTask = await ProgramTask.findOne({ program: programId })
+        .setOptions({ skipIsActiveFilter: true })
         .sort({ week: -1 })
         .select('week');
 

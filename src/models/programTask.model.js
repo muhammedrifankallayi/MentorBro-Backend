@@ -38,12 +38,19 @@ const programTaskSchema = new mongoose.Schema(
     }
 );
 
-// Index for faster queries
+// Index for faster queries and ensuring unique rounds per active program
+programTaskSchema.index({ program: 1, week: 1, isActive: 1 }, {
+    unique: true,
+    partialFilterExpression: { isActive: true }
+});
 programTaskSchema.index({ program: 1 });
 programTaskSchema.index({ week: 1 });
 
-// Only return active program tasks in queries
+// Only return active program tasks in queries unless explicitly specified
 programTaskSchema.pre(/^find/, function (next) {
+    if (this.getOptions().skipIsActiveFilter) {
+        return next();
+    }
     this.find({ isActive: { $ne: false } });
     next();
 });
