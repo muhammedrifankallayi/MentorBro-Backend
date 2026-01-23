@@ -39,7 +39,8 @@ const programTaskSchema = new mongoose.Schema(
 );
 
 // Index for faster queries and ensuring unique rounds per active program
-programTaskSchema.index({ program: 1, week: 1, isActive: 1 }, {
+// This partial index allows reusing round numbers if the previous task was soft-deleted (isActive: false)
+programTaskSchema.index({ program: 1, week: 1 }, {
     unique: true,
     partialFilterExpression: { isActive: true }
 });

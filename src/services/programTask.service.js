@@ -121,11 +121,8 @@ const update = async (id, updateData) => {
  * @returns {Promise<Object>} Deleted program task
  */
 const remove = async (id) => {
-    const programTask = await ProgramTask.findByIdAndUpdate(
-        id,
-        { isActive: false },
-        { new: true }
-    );
+    // Perform a hard delete as requested to completely remove from database/indexing
+    const programTask = await ProgramTask.findByIdAndDelete(id);
 
     if (!programTask) {
         throw new AppError('Program task not found', 404);
@@ -140,11 +137,12 @@ const remove = async (id) => {
  * @returns {Promise<Object>} Next week number
  */
 const getNextWeek = async (programId) => {
-    // Count total tasks (including inactive ones) for this program
-    const totalTasks = await ProgramTask.countDocuments({ program: programId })
-        .setOptions({ skipIsActiveFilter: true });
+    // Find the highest week number among current tasks
+    const lastTask = await ProgramTask.findOne({ program: programId })
+        .sort({ week: -1 })
+        .select('week');
 
-    const nextWeek = totalTasks + 1;
+    const nextWeek = lastTask ? lastTask.week + 1 : 1;
 
     return { nextWeek };
 };
