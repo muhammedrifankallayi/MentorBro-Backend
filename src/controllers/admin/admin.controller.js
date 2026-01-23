@@ -102,6 +102,16 @@ const getStudentsByBatch = catchAsync(async (req, res) => {
     ApiResponse.list(res, result.students, result.pagination, 'Students retrieved successfully');
 });
 
+/**
+ * @desc    Update student details
+ * @route   PUT /api/v1/admin/students/:id
+ * @access  Admin only
+ */
+const updateStudent = catchAsync(async (req, res) => {
+    const student = await studentService.updateProfile(req.params.id, req.body);
+    ApiResponse.success(res, { student }, 'Student updated successfully');
+});
+
 module.exports = {
     register,
     login,
@@ -111,6 +121,7 @@ module.exports = {
     getStudentsByApprovalStatus,
     updateStudentApproval,
     getStudentsByBatch,
+    updateStudent,
 };
 
 

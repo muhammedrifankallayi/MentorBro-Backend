@@ -212,7 +212,7 @@ const updateApprovalStatus = async (studentId, approvalStatus) => {
  */
 const updateProfile = async (studentId, updateData) => {
     // Only allow updating specific fields
-    const allowedFields = ['name', 'email', 'mobileNo', 'address', 'program'];
+    const allowedFields = ['name', 'email', 'mobileNo', 'address', 'program', 'batch', 'id'];
     const filteredData = {};
 
     Object.keys(updateData).forEach(key => {

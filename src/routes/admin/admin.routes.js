@@ -28,6 +28,7 @@ router.use('/mail', mailRoutes);
 router.get('/students/status/:status', adminController.getStudentsByApprovalStatus);
 router.get('/students/batch/:batchId', adminController.getStudentsByBatch);
 router.patch('/students/:id/approval', adminController.updateStudentApproval);
+router.put('/students/:id', adminController.updateStudent);
 
 module.exports = router;
 
