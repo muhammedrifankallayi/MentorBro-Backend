@@ -150,14 +150,14 @@ const getAll = async (queryParams = {}) => {
     if (scheduledDateFrom || scheduledDateTo) {
         filter.scheduledDate = {};
         if (scheduledDateFrom) {
-            const start = new Date(scheduledDateFrom);
-            start.setHours(0, 0, 0, 0);
-            filter.scheduledDate.$gte = start;
+            // Treat string as start of day in IST
+            const dateStr = scheduledDateFrom.includes('T') ? scheduledDateFrom.split('T')[0] : scheduledDateFrom;
+            filter.scheduledDate.$gte = new Date(`${dateStr}T00:00:00+05:30`);
         }
         if (scheduledDateTo) {
-            const end = new Date(scheduledDateTo);
-            end.setHours(23, 59, 59, 999);
-            filter.scheduledDate.$lte = end;
+            // Treat string as end of day in IST
+            const dateStr = scheduledDateTo.includes('T') ? scheduledDateTo.split('T')[0] : scheduledDateTo;
+            filter.scheduledDate.$lte = new Date(`${dateStr}T23:59:59.999+05:30`);
         }
     }
 
@@ -165,14 +165,12 @@ const getAll = async (queryParams = {}) => {
     if (endDateFrom || endDateTo) {
         filter.endDate = {};
         if (endDateFrom) {
-            const start = new Date(endDateFrom);
-            start.setHours(0, 0, 0, 0);
-            filter.endDate.$gte = start;
+            const dateStr = endDateFrom.includes('T') ? endDateFrom.split('T')[0] : endDateFrom;
+            filter.endDate.$gte = new Date(`${dateStr}T00:00:00+05:30`);
         }
         if (endDateTo) {
-            const end = new Date(endDateTo);
-            end.setHours(23, 59, 59, 999);
-            filter.endDate.$lte = end;
+            const dateStr = endDateTo.includes('T') ? endDateTo.split('T')[0] : endDateTo;
+            filter.endDate.$lte = new Date(`${dateStr}T23:59:59.999+05:30`);
         }
     }
 
@@ -388,6 +386,11 @@ const update = async (id, updateData) => {
         }
     }
 
+    // If reviewer is being unassigned, clear confirmedTime
+    if (updateData.reviewer === null) {
+        updateData.confirmedTime = "";
+    }
+
     const taskReview = await TaskReview.findByIdAndUpdate(
         id,
         updateData,
@@ -567,7 +570,7 @@ const unassignReviewer = async (id) => {
     // Update the reviewer to null
     const updatedTaskReview = await TaskReview.findByIdAndUpdate(
         id,
-        { reviewer: null },
+        { reviewer: null, confirmedTime: "" },
         {
             new: true,
             runValidators: true,
