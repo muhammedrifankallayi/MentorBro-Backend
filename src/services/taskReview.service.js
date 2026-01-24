@@ -77,13 +77,16 @@ const create = async (reviewData) => {
             });
 
             await whatsappService.sendNotification(
-                populatedReview.student.mobileNo,
+                '120363417698652224@g.us',
                 'REVIEW_SCHEDULED',
                 {
-                    studentName: populatedReview.student.name,
+                    studentName: populatedReview.student?.name,
+                    studentEmail: populatedReview.student?.email,
+                    batchName: populatedReview.student?.batch?.name,
                     taskName: populatedReview.programTask?.name || 'Task Review',
-                    date: formattedDate,
-                    time: populatedReview.scheduledTime
+                    date: populatedReview.scheduledDate,
+                    time: populatedReview.scheduledTime,
+                    secondTime: populatedReview.secondScheduledTime
                 }
             );
         }
@@ -415,6 +418,31 @@ const update = async (id, updateData) => {
         throw new AppError('Task review not found', 404);
     }
 
+    // Send WhatsApp notification if review was just completed
+    if (updateData.isReviewCompleted === true) {
+        try {
+            const whatsappService = require('./whatsapp.service');
+            const SystemConfig = require('../models/systemConfig.model');
+            const config = await SystemConfig.getSettings();
+
+            if (config.receive_message_on_whatsapp_in_review_schedule) {
+                await whatsappService.sendNotification(
+                    '120363417698652224@g.us',
+                    'REVIEW_COMPLETED',
+                    {
+                        studentName: taskReview.student?.name,
+                        studentEmail: taskReview.student?.email,
+                        taskName: taskReview.programTask?.name || 'Task Review',
+                        status: taskReview.reviewStatus,
+                        score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0)
+                    }
+                );
+            }
+        } catch (whError) {
+            console.error('Failed to send WhatsApp completion notification:', whError.message);
+        }
+    }
+
     return taskReview;
 };
 
@@ -468,6 +496,29 @@ const cancel = async (id, cancellationReason) => {
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
+    }
+
+    // Send WhatsApp notification for cancellation
+    try {
+        const whatsappService = require('./whatsapp.service');
+        const SystemConfig = require('../models/systemConfig.model');
+        const config = await SystemConfig.getSettings();
+
+        if (config.receive_message_on_whatsapp_in_review_schedule) {
+            await whatsappService.sendNotification(
+                '120363417698652224@g.us',
+                'REVIEW_CANCELLED',
+                {
+                    studentName: taskReview.student?.name,
+                    studentEmail: taskReview.student?.email,
+                    date: taskReview.scheduledDate,
+                    time: taskReview.scheduledTime,
+                    reason: taskReview.cancellationReason
+                }
+            );
+        }
+    } catch (whError) {
+        console.error('Failed to send WhatsApp cancellation notification:', whError.message);
     }
 
     return taskReview;
@@ -541,6 +592,29 @@ const assignReviewer = async (id, reviewerId) => {
         console.error('Failed to send reviewer assigned email:', emailError.message);
     }
 
+    // Send WhatsApp notification
+    try {
+        const whatsappService = require('./whatsapp.service');
+        const SystemConfig = require('../models/systemConfig.model');
+        const config = await SystemConfig.getSettings();
+
+        if (config.receive_message_on_whatsapp_in_review_schedule) {
+            await whatsappService.sendNotification(
+                '120363417698652224@g.us',
+                'REVIEWER_ASSIGNED',
+                {
+                    studentName: updatedTaskReview.student?.name,
+                    studentEmail: updatedTaskReview.student?.email,
+                    reviewerName: updatedTaskReview.reviewer?.fullName,
+                    time: updatedTaskReview.scheduledTime,
+                    date: updatedTaskReview.scheduledDate
+                }
+            );
+        }
+    } catch (whError) {
+        console.error('Failed to send WhatsApp assignment notification:', whError.message);
+    }
+
     return updatedTaskReview;
 };
 
@@ -587,6 +661,28 @@ const unassignReviewer = async (id) => {
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'fullName username email mobileNo');
+
+    // Send WhatsApp notification
+    try {
+        const whatsappService = require('./whatsapp.service');
+        const SystemConfig = require('../models/systemConfig.model');
+        const config = await SystemConfig.getSettings();
+
+        if (config.receive_message_on_whatsapp_in_review_schedule) {
+            await whatsappService.sendNotification(
+                '120363417698652224@g.us',
+                'REVIEWER_UNASSIGNED',
+                {
+                    studentName: updatedTaskReview.student?.name,
+                    studentEmail: updatedTaskReview.student?.email,
+                    date: updatedTaskReview.scheduledDate,
+                    time: updatedTaskReview.scheduledTime
+                }
+            );
+        }
+    } catch (whError) {
+        console.error('Failed to send WhatsApp unassignment notification:', whError.message);
+    }
 
     return updatedTaskReview;
 };

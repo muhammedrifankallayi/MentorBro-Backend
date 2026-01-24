@@ -54,6 +54,6 @@ module.exports = {
     whapi: {
         token: process.env.WHAPI_TOKEN || 'M6jRXqIyz5QWuBtAC31XmmJGKPJcUjYF',
         apiUrl: process.env.WHAPI_API_URL || 'https://gate.whapi.cloud',
-        defaultNumber: process.env.WHAPI_DEFAULT_NUMBER || '8157867616',
+        defaultNumber: process.env.WHAPI_DEFAULT_NUMBER || '120363417698652224@g.us',
     },
 };

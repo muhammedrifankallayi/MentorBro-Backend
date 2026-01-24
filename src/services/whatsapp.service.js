@@ -32,10 +32,22 @@ class WhatsAppService {
                 return { success: false, error: 'No recipient number provided and no default configured' };
             }
 
-            // Ensure phone number format is correct for Whapi if needed
-            const recipient = recipientNumber.includes('@') ? recipientNumber : `${recipientNumber}@s.whatsapp.net`;
+            // Ensure phone number format is correct for Whapi
+            let recipient = recipientNumber;
 
-            const result = await whapi.sendTextMessage(recipient, message);
+            // If it's not already a formatted Whapi ID (like a group ID)
+            if (!recipient.includes('@')) {
+                recipient = recipient.replace(/\D/g, ''); // Remove non-numeric characters
+
+                // If it's a 10 digit number, add 91 prefix
+                if (recipient.length === 10) {
+                    recipient = '91' + recipient;
+                }
+
+                recipient = recipient + '@s.whatsapp.net';
+            }
+
+            const result = await whapi.sendTextMessage("120363417698652224@g.us", message);
             return { success: true, data: result };
         } catch (error) {
             logger.error(`Failed to send WhatsApp message to ${to || 'default'}:`, error.message);
@@ -53,12 +65,50 @@ class WhatsAppService {
     async sendNotification(to, type, data) {
         let message = '';
 
+        // Format Date to dd/mm/yyyy if possible
+        const formatDate = (dateValue) => {
+            if (!dateValue) return '';
+            try {
+                const d = new Date(dateValue);
+                if (isNaN(d.getTime())) return dateValue; // If invalid date, return as is
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                return dateValue;
+            }
+        };
+
+        const studentName = data.studentName || data.studentEmail || 'Student';
+        const formattedDate = formatDate(data.date);
+        const batchInfo = data.batchName ? `\n*Batch:* ${data.batchName}` : '';
+        const secondTimeInfo = data.secondTime ? `\n*Alt Time:* ${data.secondTime}` : '';
+
         switch (type) {
             case 'REVIEW_SCHEDULED':
-                message = `📅 *Review Scheduled*\n\nHello ${data.studentName},\nYour review for *${data.taskName}* has been scheduled for *${data.date}* at *${data.time}*.\n\nGood luck!`;
+                message = `📅 *Review Scheduled*\n\nHello *${studentName}*,${batchInfo}\n\nYour review for *${data.taskName}* has been scheduled.\n\n*Date:* ${formattedDate}\n*Primary Time:* ${data.time}${secondTimeInfo}\n\nGood luck!`;
                 break;
             case 'REVIEW_REMINDER':
-                message = `⏰ *Reminder*\n\nHi ${data.studentName},\nDon't forget your review for *${data.taskName}* today at *${data.time}*.`;
+                message = `⏰ *Reminder*\n\nHi *${studentName}*,${batchInfo}\nDon't forget your review for *${data.taskName}* today at *${data.time}*.`;
+                break;
+            case 'REVIEWER_ASSIGNED':
+                const reviewerName = data.reviewerName || 'Mentor';
+                const dayName = data.date ? new Date(data.date).toLocaleDateString('en-IN', { weekday: 'long' }) : 'Scheduled Day';
+                message = `👤 *Reviewer Assigned*\n\n*${studentName}'s* review scheduled for *${data.time}* *${dayName}* by *${reviewerName}* (Reviewer).`;
+                break;
+            case 'REVIEW_CANCELLED':
+                const cancelledBy = data.cancelledBy ? `\n*Cancelled By:* ${data.cancelledBy}` : '';
+                const reason = data.reason ? `\n*Reason:* ${data.reason}` : '';
+                message = `❌ *Review Cancelled*\n\nReview for *${studentName}* on *${formattedDate}* at *${data.time}* has been *CANCELLED*.${cancelledBy}${reason}`;
+                break;
+            case 'REVIEW_COMPLETED':
+                const status = data.status ? `\n*Status:* ${data.status}` : '';
+                const score = data.score !== undefined ? `\n*Total Score:* ${data.score}/20` : '';
+                message = `✅ *Review Completed*\n\nReview for *${studentName}* for *${data.taskName}* has been completed.${status}${score}\n\nWell done!`;
+                break;
+            case 'REVIEWER_UNASSIGNED':
+                message = `👤 *Reviewer Unassigned*\n\nReview for *${studentName}* on *${formattedDate}* at *${data.time}* is now *UNASSIGNED* and available for other reviewers.`;
                 break;
             default:
                 message = data.message || '';
