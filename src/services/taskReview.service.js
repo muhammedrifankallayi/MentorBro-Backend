@@ -36,6 +36,9 @@ const create = async (reviewData) => {
                     ...reviewData.re_reviewDetails,
                     fineAmount: fineAmount
                 };
+                // Set paymentAmount to fineAmount for re-reviews so it shows correctly in UI
+                reviewData.paymentAmount = programTask.cost || 120;
+                // If proof is provided, mark payment as ordered
             } else {
                 reviewData.paymentAmount = programTask.cost || 0;
             }
@@ -139,17 +142,22 @@ const getAll = async (queryParams = {}) => {
     if (isPaymentOrderd !== undefined) filter.isPaymentOrderd = isPaymentOrderd === 'true';
     if (isPaymentCompleted !== undefined) filter.isPaymentCompleted = isPaymentCompleted === 'true';
     if (isReReview !== undefined) filter.isReReview = isReReview === 'true';
+    if (queryParams.isCancelled !== undefined) {
+        filter.isCancelled = queryParams.isCancelled === 'true' || queryParams.isCancelled === true;
+    }
 
     // Scheduled Date Range Filter
     if (scheduledDateFrom || scheduledDateTo) {
         filter.scheduledDate = {};
         if (scheduledDateFrom) {
-            filter.scheduledDate.$gte = new Date(scheduledDateFrom);
+            const start = new Date(scheduledDateFrom);
+            start.setHours(0, 0, 0, 0);
+            filter.scheduledDate.$gte = start;
         }
         if (scheduledDateTo) {
-            const date = new Date(scheduledDateTo);
-            date.setHours(23, 59, 59, 999); // Include the entire end day
-            filter.scheduledDate.$lte = date;
+            const end = new Date(scheduledDateTo);
+            end.setHours(23, 59, 59, 999);
+            filter.scheduledDate.$lte = end;
         }
     }
 
@@ -157,12 +165,14 @@ const getAll = async (queryParams = {}) => {
     if (endDateFrom || endDateTo) {
         filter.endDate = {};
         if (endDateFrom) {
-            filter.endDate.$gte = new Date(endDateFrom);
+            const start = new Date(endDateFrom);
+            start.setHours(0, 0, 0, 0);
+            filter.endDate.$gte = start;
         }
         if (endDateTo) {
-            const date = new Date(endDateTo);
-            date.setHours(23, 59, 59, 999); // Include the entire end day
-            filter.endDate.$lte = date;
+            const end = new Date(endDateTo);
+            end.setHours(23, 59, 59, 999);
+            filter.endDate.$lte = end;
         }
     }
 
@@ -334,8 +344,8 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
  * @returns {Promise<Object>} Updated task review
  */
 const update = async (id, updateData) => {
-    // If programTask is being updated, we need to potentially recalculate costs
-    if (updateData.programTask || updateData.isReReview !== undefined) {
+    // If programTask, isReReview, or re_reviewDetails is being updated, we need to potentially recalculate costs
+    if (updateData.programTask || updateData.isReReview !== undefined || updateData.re_reviewDetails) {
         const currentReview = await TaskReview.findById(id);
         if (!currentReview) {
             throw new AppError('Task review not found', 404);
@@ -352,12 +362,19 @@ const update = async (id, updateData) => {
                         ? programTask.re_review_fine_amount
                         : 100;
 
-                    // Maintain structure of re_reviewDetails
+                    // Update re_reviewDetails while maintaining existing data
                     updateData.re_reviewDetails = {
                         ...(currentReview.re_reviewDetails ? currentReview.re_reviewDetails.toObject() : {}),
+                        ...updateData.re_reviewDetails,
                         fineAmount: fineAmount
                     };
-                    updateData.paymentAmount = 0; // Clear standard payment if it becomes a re-review
+
+                    // Set paymentAmount to fineAmount for re-reviews so it shows correctly in UI
+                    updateData.paymentAmount = fineAmount;
+                    // If proof is provided or already exists, mark payment as ordered
+                    if (updateData.re_reviewDetails?.proof || (currentReview.re_reviewDetails && currentReview.re_reviewDetails.proof)) {
+                        updateData.isPaymentOrderd = true;
+                    }
                 } else {
                     updateData.paymentAmount = programTask.cost || 0;
                     // Clear re_reviewDetails if it's no longer a re-review

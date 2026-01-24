@@ -42,10 +42,11 @@ const taskReviewSchema = new mongoose.Schema(
             required: [true, 'Please provide scheduled time'],
             trim: true,
         },
-        secondScheduledDate: {
-            type: Date,
-        },
         secondScheduledTime: {
+            type: String,
+            trim: true,
+        },
+        confirmedTime: {
             type: String,
             trim: true,
         },
