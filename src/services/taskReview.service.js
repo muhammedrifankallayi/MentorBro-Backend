@@ -83,7 +83,7 @@ const create = async (reviewData) => {
                     studentName: populatedReview.student?.name,
                     studentEmail: populatedReview.student?.email,
                     batchName: populatedReview.student?.batch?.name,
-                    taskName: populatedReview.programTask?.name || 'Task Review',
+                    taskName: `${populatedReview.programTask?.name || 'Task Review'}${populatedReview.isReReview ? ' (Re-Review)' : ''}`,
                     date: populatedReview.scheduledDate,
                     time: populatedReview.scheduledTime,
                     secondTime: populatedReview.secondScheduledTime
