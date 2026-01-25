@@ -24,6 +24,10 @@ const startServer = async () => {
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
       logger.info(`📡 API available at http://localhost:${PORT}/api/v1`);
+
+      // Initialize Cron Jobs
+      const cronService = require('./src/services/cron.service');
+      cronService.init();
     });
 
     // Handle unhandled promise rejections
