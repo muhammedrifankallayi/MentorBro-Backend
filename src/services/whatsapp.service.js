@@ -47,7 +47,7 @@ class WhatsAppService {
                 recipient = recipient + '@s.whatsapp.net';
             }
 
-            const result = await whapi.sendTextMessage("120363417698652224@g.us", message);
+            const result = await whapi.sendTextMessage(recipient, message);
             return { success: true, data: result };
         } catch (error) {
             logger.error(`Failed to send WhatsApp message to ${to || 'default'}:`, error.message);
@@ -80,7 +80,7 @@ class WhatsAppService {
             }
         };
 
-        const studentName = data.studentName || data.studentEmail || 'Student';
+        const studentName = data.studentName || data.studentUsername || data.studentEmail || 'Student';
         const formattedDate = formatDate(data.date);
         const batchInfo = data.batchName ? `\n*Batch:* ${data.batchName}` : '';
         const secondTimeInfo = data.secondTime ? `\n*Alt Time:* ${data.secondTime}` : '';
@@ -93,7 +93,7 @@ class WhatsAppService {
                 message = `⏰ *Reminder*\n\nHi *${studentName}*,${batchInfo}\nDon't forget your review for *${data.taskName}* today at *${data.time}*.`;
                 break;
             case 'REVIEWER_ASSIGNED':
-                const reviewerName = data.reviewerName || 'Mentor';
+                const reviewerName = data.reviewerName || data.reviewerUsername || data.reviewerEmail || 'Mentor';
                 const dayName = data.date ? new Date(data.date).toLocaleDateString('en-IN', { weekday: 'long' }) : 'Scheduled Day';
                 message = `👤 *Reviewer Assigned*\n\n*${studentName}'s* review scheduled for *${data.time}* *${dayName}* by *${reviewerName}* (Reviewer).`;
                 break;

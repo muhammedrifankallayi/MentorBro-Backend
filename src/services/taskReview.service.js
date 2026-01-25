@@ -59,7 +59,7 @@ const create = async (reviewData) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'username fullName');
+        .populate('reviewer', 'fullName username email mobileNo');
 
     // Send WhatsApp notification if enabled
     try {
@@ -68,27 +68,24 @@ const create = async (reviewData) => {
 
         const config = await SystemConfig.getSettings();
 
-        if (config.receive_message_on_whatsapp_in_review_schedule && populatedReview.student?.mobileNo) {
-            const formattedDate = new Date(populatedReview.scheduledDate).toLocaleDateString('en-IN', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+        if (config.receive_message_on_whatsapp_in_review_schedule) {
+            const notificationData = {
+                studentName: populatedReview.student?.name,
+                studentEmail: populatedReview.student?.email,
+                batchName: populatedReview.student?.batch?.name,
+                taskName: `${populatedReview.programTask?.name || 'Task Review'}${populatedReview.isReReview ? ' (Re-Review)' : ''}`,
+                date: populatedReview.scheduledDate,
+                time: populatedReview.scheduledTime,
+                secondTime: populatedReview.secondScheduledTime
+            };
 
-            await whatsappService.sendNotification(
-                '120363417698652224@g.us',
-                'REVIEW_SCHEDULED',
-                {
-                    studentName: populatedReview.student?.name,
-                    studentEmail: populatedReview.student?.email,
-                    batchName: populatedReview.student?.batch?.name,
-                    taskName: `${populatedReview.programTask?.name || 'Task Review'}${populatedReview.isReReview ? ' (Re-Review)' : ''}`,
-                    date: populatedReview.scheduledDate,
-                    time: populatedReview.scheduledTime,
-                    secondTime: populatedReview.secondScheduledTime
-                }
-            );
+            // Send to Management Group
+            await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_SCHEDULED', notificationData);
+
+            // Send to Student
+            if (populatedReview.student?.mobileNo) {
+                await whatsappService.sendNotification(populatedReview.student.mobileNo, 'REVIEW_SCHEDULED', notificationData);
+            }
         }
     } catch (whatsappError) {
         // Log but don't fail the operation if WhatsApp fails
@@ -188,7 +185,7 @@ const getAll = async (queryParams = {}) => {
         TaskReview.find(filter)
             .populate({
                 path: 'student',
-                select: 'name email batch',
+                select: 'name email batch mobileNo',
                 populate: {
                     path: 'batch',
                     select: 'name',
@@ -196,7 +193,7 @@ const getAll = async (queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'username fullName')
+            .populate('reviewer', 'fullName username email mobileNo')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -223,7 +220,7 @@ const getById = async (id) => {
     const taskReview = await TaskReview.findById(id)
         .populate({
             path: 'student',
-            select: 'name email batch',
+            select: 'name email batch mobileNo',
             populate: {
                 path: 'batch',
                 select: 'name',
@@ -231,7 +228,7 @@ const getById = async (id) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week tasks re_review_fine_amount')
-        .populate('reviewer', 'username fullName');
+        .populate('reviewer', 'fullName username email mobileNo');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -263,7 +260,7 @@ const getByStudentId = async (studentId, queryParams = {}) => {
         TaskReview.find(filter)
             .populate({
                 path: 'student',
-                select: 'name email batch',
+                select: 'name email batch mobileNo',
                 populate: {
                     path: 'batch',
                     select: 'name',
@@ -271,7 +268,7 @@ const getByStudentId = async (studentId, queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'username fullName')
+            .populate('reviewer', 'fullName username email mobileNo')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -312,7 +309,7 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
         TaskReview.find(filter)
             .populate({
                 path: 'student',
-                select: 'name email batch',
+                select: 'name email batch mobileNo',
                 populate: {
                     path: 'batch',
                     select: 'name',
@@ -320,7 +317,7 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'username fullName')
+            .populate('reviewer', 'fullName username email mobileNo')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -345,9 +342,20 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
  * @returns {Promise<Object>} Updated task review
  */
 const update = async (id, updateData) => {
+    // For notification logic: check if reviewer is being changed
+    let previousReviewerId = null;
+    let currentReview = null;
+
+    if (updateData.programTask || updateData.isReReview !== undefined || updateData.re_reviewDetails || updateData.reviewer !== undefined) {
+        currentReview = await TaskReview.findById(id);
+        if (!currentReview) {
+            throw new AppError('Task review not found', 404);
+        }
+        previousReviewerId = currentReview.reviewer ? currentReview.reviewer.toString() : null;
+    }
+
     // If programTask, isReReview, or re_reviewDetails is being updated, we need to potentially recalculate costs
     if (updateData.programTask || updateData.isReReview !== undefined || updateData.re_reviewDetails) {
-        const currentReview = await TaskReview.findById(id);
         if (!currentReview) {
             throw new AppError('Task review not found', 404);
         }
@@ -404,7 +412,7 @@ const update = async (id, updateData) => {
     )
         .populate({
             path: 'student',
-            select: 'name email batch',
+            select: 'name email batch mobileNo',
             populate: {
                 path: 'batch',
                 select: 'name',
@@ -412,7 +420,7 @@ const update = async (id, updateData) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'username fullName');
+        .populate('reviewer', 'fullName username email mobileNo');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -426,20 +434,71 @@ const update = async (id, updateData) => {
             const config = await SystemConfig.getSettings();
 
             if (config.receive_message_on_whatsapp_in_review_schedule) {
-                await whatsappService.sendNotification(
-                    '120363417698652224@g.us',
-                    'REVIEW_COMPLETED',
-                    {
-                        studentName: taskReview.student?.name,
-                        studentEmail: taskReview.student?.email,
-                        taskName: taskReview.programTask?.name || 'Task Review',
-                        status: taskReview.reviewStatus,
-                        score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0)
-                    }
-                );
+                const notificationData = {
+                    studentName: taskReview.student?.name,
+                    studentEmail: taskReview.student?.email,
+                    taskName: taskReview.programTask?.name || 'Task Review',
+                    status: taskReview.reviewStatus,
+                    score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0)
+                };
+
+                // Management Group
+                await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_COMPLETED', notificationData);
+
+                // Student
+                if (taskReview.student?.mobileNo) {
+                    await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEW_COMPLETED', notificationData);
+                }
             }
         } catch (whError) {
             console.error('Failed to send WhatsApp completion notification:', whError.message);
+        }
+    }
+
+    // Send WhatsApp notification if reviewer was assigned
+    const newReviewerId = taskReview.reviewer ? taskReview.reviewer._id.toString() : null;
+    if (updateData.reviewer !== undefined && previousReviewerId !== newReviewerId) {
+        try {
+            const whatsappService = require('./whatsapp.service');
+            const SystemConfig = require('../models/systemConfig.model');
+            const config = await SystemConfig.getSettings();
+
+            if (config.receive_message_on_whatsapp_in_review_schedule) {
+                if (newReviewerId) {
+                    const notificationData = {
+                        studentName: taskReview.student?.name,
+                        studentEmail: taskReview.student?.email,
+                        reviewerName: taskReview.reviewer?.fullName || taskReview.reviewer?.username || taskReview.reviewer?.email,
+                        time: taskReview.confirmedTime || taskReview.scheduledTime,
+                        date: taskReview.scheduledDate
+                    };
+
+                    // Management Group
+                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_ASSIGNED', notificationData);
+
+                    // Student
+                    if (taskReview.student?.mobileNo) {
+                        await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEWER_ASSIGNED', notificationData);
+                    }
+                } else if (previousReviewerId && !newReviewerId) {
+                    const notificationData = {
+                        studentName: taskReview.student?.name,
+                        studentEmail: taskReview.student?.email,
+                        time: taskReview.scheduledTime,
+                        date: taskReview.scheduledDate
+                    };
+
+                    // Management Group
+                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_UNASSIGNED', notificationData);
+
+                    // Student
+                    if (taskReview.student?.mobileNo) {
+                        await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEWER_UNASSIGNED', notificationData);
+                    }
+                }
+            }
+        } catch (whError) {
+            console.error('Failed to send WhatsApp assignment notification:', whError.message);
         }
     }
 
@@ -492,7 +551,7 @@ const cancel = async (id, cancellationReason) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'username fullName');
+        .populate('reviewer', 'fullName username email mobileNo');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -579,7 +638,7 @@ const assignReviewer = async (id, reviewerId) => {
         if (config.send_mail_on_reviewer_assign_to_student && updatedTaskReview.student?.email) {
             await mailerService.sendReviewerAssignedEmail(
                 { email: updatedTaskReview.student.email, name: updatedTaskReview.student.name },
-                { fullName: updatedTaskReview.reviewer?.fullName, username: updatedTaskReview.reviewer?.username },
+                { fullName: updatedTaskReview.reviewer?.fullName, username: updatedTaskReview.reviewer?.username, email: updatedTaskReview.reviewer?.email },
                 {
                     scheduledDate: updatedTaskReview.scheduledDate,
                     scheduledTime: updatedTaskReview.scheduledTime,
@@ -605,7 +664,7 @@ const assignReviewer = async (id, reviewerId) => {
                 {
                     studentName: updatedTaskReview.student?.name,
                     studentEmail: updatedTaskReview.student?.email,
-                    reviewerName: updatedTaskReview.reviewer?.fullName,
+                    reviewerName: updatedTaskReview.reviewer?.fullName || updatedTaskReview.reviewer?.username || updatedTaskReview.reviewer?.email,
                     time: updatedTaskReview.scheduledTime,
                     date: updatedTaskReview.scheduledDate
                 }
@@ -808,7 +867,7 @@ const getLastReviewForStudent = async (studentId) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'username fullName');
+        .populate('reviewer', 'fullName username email mobileNo');
 
     if (!taskReview) {
         throw new AppError('No reviews found for this student', 404);

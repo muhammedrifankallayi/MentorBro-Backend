@@ -15,7 +15,7 @@ class MailerService {
     async sendReviewerAssignedEmail(studentData, reviewerData, reviewData) {
         try {
             const { email, name: studentName } = studentData;
-            const { fullName: reviewerName, username: reviewerUsername } = reviewerData;
+            const { fullName: reviewerName, username: reviewerUsername, email: reviewerEmail } = reviewerData;
             const { scheduledDate, scheduledTime, programTask } = reviewData;
 
             // Format the date nicely
@@ -64,7 +64,7 @@ class MailerService {
                                 </tr>
                                 <tr>
                                     <td style="padding: 10px 0; color: #555; font-weight: bold;">Reviewer:</td>
-                                    <td style="padding: 10px 0; color: #2c3e50;">${reviewerName || reviewerUsername}</td>
+                                    <td style="padding: 10px 0; color: #2c3e50;">${reviewerName || reviewerUsername || reviewerEmail}</td>
                                 </tr>
                             </table>
                         </div>
@@ -101,7 +101,7 @@ Review Details:
 - Task: ${programTask?.name || 'N/A'}
 - Date: ${formattedDate}
 - Time: ${scheduledTime}
-- Reviewer: ${reviewerName || reviewerUsername}
+- Reviewer: ${reviewerName || reviewerUsername || reviewerEmail}
 
 Make sure you are well-prepared for the review!
 
