@@ -1,28 +1,29 @@
-const cron = require('node-cron');
 const TaskReview = require('../models/taskReview.model');
 const whatsappService = require('./whatsapp.service');
 const logger = require('../utils/logger');
 
 /**
- * Service to handle scheduled tasks
+ * Service to handle scheduled tasks without external dependencies like node-cron
  */
 class CronService {
     /**
-     * Initialize all cron jobs
+     * Initialize the cron checker
      */
     init() {
-        // Schedule everyday at 5:00 AM IST
-        // '0 5 * * *' is 5:00 AM in server time
-        // Since we are likely on IST (or want IST), we can specify timezone if node-cron supports it
-        // Or calculate the offset. Usually node-cron uses system time.
-        cron.schedule('0 5 * * *', () => {
-            this.sendDailyReviewReminders();
-        }, {
-            scheduled: true,
-            timezone: "Asia/Kolkata"
-        });
+        logger.info('Cron service initialized (Zero-dependency mode)');
 
-        logger.info('Cron jobs initialized');
+        // Check every minute if it's 5:00 AM IST
+        setInterval(() => {
+            const now = new Date();
+            // Convert to IST (UTC + 5:30)
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(now.getTime() + istOffset + (now.getTimezoneOffset() * 60000));
+
+            // If it's exactly 5:00 AM (local minute)
+            if (istDate.getHours() === 5 && istDate.getMinutes() === 0) {
+                this.sendDailyReviewReminders();
+            }
+        }, 60000); // Check every 60 seconds
     }
 
     /**
@@ -30,7 +31,7 @@ class CronService {
      */
     async sendDailyReviewReminders() {
         try {
-            logger.info('Starting daily review reminders cron job');
+            logger.info('Starting daily review reminders task');
 
             const SystemConfig = require('../models/systemConfig.model');
             const config = await SystemConfig.getSettings();
@@ -68,16 +69,6 @@ class CronService {
                 if (!student || !student.mobileNo) continue;
 
                 const studentName = student.name || 'Student';
-
-                // template provided by user:
-                /*
-                Hi               ,
-                Meeting Link:  
-                scheduled on 24th Jan 2025 
-                Please join the meeting.
-                Thank you.
-                */
-
                 const message = `Hi *${studentName}*,\nMeeting Link: \nscheduled on *${todayFormatted}*\nPlease join the meeting.\nThank you.`;
 
                 await whatsappService.sendTextMessage(student.mobileNo, message);
@@ -86,7 +77,7 @@ class CronService {
 
             logger.info(`Finished daily review reminders. Sent ${reviews.length} messages.`);
         } catch (error) {
-            logger.error('Error in daily review reminders cron job:', error.message);
+            logger.error('Error in daily review reminders task:', error.message);
         }
     }
 
@@ -100,7 +91,6 @@ class CronService {
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const year = d.getFullYear();
 
-        // Get ordinal suffix
         let suffix = 'th';
         if (day % 10 === 1 && day !== 11) suffix = 'st';
         else if (day % 10 === 2 && day !== 12) suffix = 'nd';

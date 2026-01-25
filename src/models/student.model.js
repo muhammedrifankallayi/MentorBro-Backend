@@ -71,7 +71,7 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-studentSchema.index({ email: 1 });
+// Index for faster queries (email is already indexed due to unique: true)
 studentSchema.index({ type: 1 });
 
 // Hash password before saving
