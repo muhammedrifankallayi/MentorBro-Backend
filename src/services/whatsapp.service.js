@@ -87,10 +87,11 @@ class WhatsAppService {
 
         switch (type) {
             case 'REVIEW_SCHEDULED':
-                message = `📅 *Review Scheduled*\n\nStudent: *${studentName}*${batchInfo}\n\nYour review for *${data.taskName}* has been scheduled.\n\n*Date:* ${formattedDate}\n*Primary Time:* ${data.time}${secondTimeInfo}\n\nGood luck!`;
+                message = `🔴 *Review Scheduled*\n\nStudent: *${studentName}*${batchInfo}\n\nYour review for *${data.taskName}* has been scheduled.\n\n*Date:* ${formattedDate}\n*Primary Time:* ${data.time}${secondTimeInfo}\n\nGood luck!`;
                 break;
             case 'REVIEW_REMINDER':
-                message = `⏰ *Reminder*\n\nHi *${studentName}*,${batchInfo}\nDon't forget your review for *${data.taskName}* today at *${data.time}*.`;
+                const revHeader = data.reviewerName ? ` for *${data.reviewerName}*` : '';
+                message = `⏰ *Review Reminder${revHeader}*\n\nStudent: *${studentName}*${batchInfo}\n\nFriendly reminder that your review for *${data.taskName}* is scheduled for today at *${data.time}*.\n\nPlease be ready on time. Good luck!`;
                 break;
             case 'REVIEWER_ASSIGNED':
                 const reviewerName = data.reviewerName || data.reviewerUsername || data.reviewerEmail || 'Mentor';

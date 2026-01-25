@@ -110,6 +110,10 @@ const taskReviewSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        isReminderSent: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

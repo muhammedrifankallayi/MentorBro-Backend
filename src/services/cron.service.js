@@ -12,24 +12,31 @@ class CronService {
     init() {
         logger.info('Cron service initialized (Zero-dependency mode)');
 
-        // Check every minute if it's 5:00 AM IST
         setInterval(() => {
             const now = new Date();
-            // Convert to IST (UTC + 5:30)
+            // Convert to IST (UTC + 5:30) point in time representing IST components locally
             const istOffset = 5.5 * 60 * 60 * 1000;
             const istDate = new Date(now.getTime() + istOffset + (now.getTimezoneOffset() * 60000));
 
-            // If it's exactly 5:00 AM (local minute)
-            if (istDate.getHours() === 5 && istDate.getMinutes() === 0) {
-                this.sendDailyReviewReminders();
+            const hours = istDate.getHours();
+            const minutes = istDate.getMinutes();
+
+            // 1. Daily Summary Reminder at 5:00 AM IST
+            if (hours === 5 && minutes === 0) {
+                this.sendDailyReviewReminders(istDate);
             }
+
+            // 2. 30-Minute Upcoming Review Reminders (Checked every minute)
+            this.send30MinReminders(istDate);
+
         }, 60000); // Check every 60 seconds
     }
 
     /**
      * Send reminders for reviews scheduled for today
+     * @param {Date} currentIstDate - Current date/time in IST
      */
-    async sendDailyReviewReminders() {
+    async sendDailyReviewReminders(currentIstDate) {
         try {
             logger.info('Starting daily review reminders task');
 
@@ -42,16 +49,11 @@ class CronService {
             }
 
             // Get start and end of today in IST
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            const startOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 0, 0, 0, 0);
+            const endOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 23, 59, 59, 999);
 
-            // Find all active, non-cancelled reviews for today
             const reviews = await TaskReview.find({
-                scheduledDate: {
-                    $gte: startOfDay,
-                    $lte: endOfDay
-                },
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
                 isCancelled: false,
                 isReviewCompleted: false,
                 isActive: true
@@ -62,7 +64,7 @@ class CronService {
                 return;
             }
 
-            const todayFormatted = this._formatDate(now);
+            const todayFormatted = this._formatDate(currentIstDate);
 
             for (const review of reviews) {
                 const student = review.student;
@@ -78,6 +80,96 @@ class CronService {
             logger.info(`Finished daily review reminders. Sent ${reviews.length} messages.`);
         } catch (error) {
             logger.error('Error in daily review reminders task:', error.message);
+        }
+    }
+
+    /**
+     * Send reminders 30 minutes before a review starts
+     * @param {Date} currentIstDate - Current date/time in IST
+     */
+    async send30MinReminders(currentIstDate) {
+        try {
+            const SystemConfig = require('../models/systemConfig.model');
+            const config = await SystemConfig.getSettings();
+
+            if (!config.receive_message_on_whatsapp_in_review_schedule) return;
+
+            // Get start and end of today in IST
+            const startOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 0, 0, 0, 0);
+            const endOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 23, 59, 59, 999);
+
+            // Find reviews for today that haven't had a reminder sent
+            const reviews = await TaskReview.find({
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                isCancelled: false,
+                isReviewCompleted: false,
+                isActive: true,
+                isReminderSent: { $ne: true }
+            }).populate('student', 'name mobileNo email')
+                .populate('programTask', 'name')
+                .populate('reviewer', 'fullName username email');
+
+            for (const review of reviews) {
+                if (!review.scheduledTime) continue;
+
+                // Parse time into a date object sharing the same timezone context as currentIstDate
+                const scheduledTimeIst = this._parseTimeToDate(currentIstDate, review.scheduledTime);
+                if (!scheduledTimeIst) continue;
+
+                // Difference in minutes
+                const diffMs = scheduledTimeIst - currentIstDate;
+                const diffMins = Math.round(diffMs / 60000);
+
+                // If scheduled in exactly 30 minutes (catch 29-31 range)
+                if (diffMins >= 29 && diffMins <= 30) {
+                    const student = review.student;
+                    if (student && student.mobileNo) {
+                        const notificationData = {
+                            studentName: student.name,
+                            studentUsername: student.username,
+                            studentEmail: student.email,
+                            reviewerName: review.reviewer?.fullName || review.reviewer?.username || review.reviewer?.email || 'Mentor',
+                            taskName: review.programTask?.name || 'Task Review',
+                            time: review.confirmedTime || review.scheduledTime,
+                            date: review.scheduledDate
+                        };
+
+                        await whatsappService.sendNotification(student.mobileNo, 'REVIEW_REMINDER', notificationData);
+
+                        // Mark as sent
+                        await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
+
+                        logger.info(`30-min reminder sent to ${student.name} for review at ${review.scheduledTime}`);
+                    }
+                }
+            }
+        } catch (error) {
+            logger.error('Error in 30-min reminder task:', error.message);
+        }
+    }
+
+    /**
+     * Parse time string like "10:30 AM" into a Date object on the same day as referenceDate
+     * @private
+     */
+    _parseTimeToDate(referenceDate, timeStr) {
+        try {
+            let hours = 0, minutes = 0;
+            const timePattern = /(\d+):(\d+)\s*(AM|PM)?/i;
+            const match = timeStr.match(timePattern);
+
+            if (!match) return null;
+
+            hours = parseInt(match[1]);
+            minutes = parseInt(match[2]);
+            const modifier = match[3] ? match[3].toUpperCase() : null;
+
+            if (modifier === 'PM' && hours < 12) hours += 12;
+            if (modifier === 'AM' && hours === 12) hours = 0;
+
+            return new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), hours, minutes, 0, 0);
+        } catch (e) {
+            return null;
         }
     }
 
