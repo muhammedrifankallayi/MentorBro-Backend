@@ -87,7 +87,7 @@ class WhatsAppService {
 
         switch (type) {
             case 'REVIEW_SCHEDULED':
-                message = `📅 *Review Scheduled*\n\nHello *${studentName}*,${batchInfo}\n\nYour review for *${data.taskName}* has been scheduled.\n\n*Date:* ${formattedDate}\n*Primary Time:* ${data.time}${secondTimeInfo}\n\nGood luck!`;
+                message = `📅 *Review Scheduled*\n\nStudent: *${studentName}*${batchInfo}\n\nYour review for *${data.taskName}* has been scheduled.\n\n*Date:* ${formattedDate}\n*Primary Time:* ${data.time}${secondTimeInfo}\n\nGood luck!`;
                 break;
             case 'REVIEW_REMINDER':
                 message = `⏰ *Reminder*\n\nHi *${studentName}*,${batchInfo}\nDon't forget your review for *${data.taskName}* today at *${data.time}*.`;
