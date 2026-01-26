@@ -575,8 +575,10 @@ const checkUsernameAvailability = async (username) => {
  * @param {string} resetUrlBase - Frontend reset URL base
  */
 const forgotPassword = async (email, resetUrlBase) => {
+    const trimmedEmail = email?.trim()?.toLowerCase();
+
     // 1) Get reviewer based on POSTed email
-    const reviewer = await Reviewer.findOne({ email });
+    const reviewer = await Reviewer.findOne({ email: trimmedEmail });
     if (!reviewer) {
         throw new AppError('There is no reviewer with that email address.', 404);
     }
@@ -590,11 +592,14 @@ const forgotPassword = async (email, resetUrlBase) => {
         const resetURL = `${resetUrlBase}/${resetToken}`;
         await mailer.sendPasswordResetEmail(reviewer.email, resetToken, resetURL);
     } catch (err) {
+        const logger = require('../utils/logger');
+        logger.error('Forgot password email failed:', err);
+
         reviewer.passwordResetToken = undefined;
         reviewer.passwordResetExpires = undefined;
         await reviewer.save({ validateBeforeSave: false });
 
-        throw new AppError('There was an error sending the email. Try again later!', 500);
+        throw new AppError(`There was an error sending the email: ${err.message}`, 500);
     }
 };
 
