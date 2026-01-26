@@ -76,7 +76,7 @@ app.get('/', (req, res) => {
     res.status(200).json({
         success: true,
         message: 'Welcome to MentorBro API',
-        version: '1.0.10',
+        version: '1.0.11',
         documentation: '/api/v1/docs',
     })
 });

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { Reviewer } = require('../models');
-const { AppError } = require('../utils');
+const { AppError, mailer } = require('../utils');
 const config = require('../config');
 
 /**
@@ -568,6 +569,64 @@ const checkUsernameAvailability = async (username) => {
     return !!result;
 };
 
+/**
+ * Send password reset email for reviewer
+ * @param {string} email - Reviewer email
+ * @param {string} resetUrlBase - Frontend reset URL base
+ */
+const forgotPassword = async (email, resetUrlBase) => {
+    // 1) Get reviewer based on POSTed email
+    const reviewer = await Reviewer.findOne({ email });
+    if (!reviewer) {
+        throw new AppError('There is no reviewer with that email address.', 404);
+    }
+
+    // 2) Generate the random reset token
+    const resetToken = reviewer.createPasswordResetToken();
+    await reviewer.save({ validateBeforeSave: false });
+
+    // 3) Send it to reviewer's email
+    try {
+        const resetURL = `${resetUrlBase}/${resetToken}`;
+        await mailer.sendPasswordResetEmail(reviewer.email, resetToken, resetURL);
+    } catch (err) {
+        reviewer.passwordResetToken = undefined;
+        reviewer.passwordResetExpires = undefined;
+        await reviewer.save({ validateBeforeSave: false });
+
+        throw new AppError('There was an error sending the email. Try again later!', 500);
+    }
+};
+
+/**
+ * Reset reviewer password
+ * @param {string} token - Reset token
+ * @param {string} password - New password
+ */
+const resetPassword = async (token, password) => {
+    // 1) Get reviewer based on the token
+    const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+    const reviewer = await Reviewer.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() },
+    });
+
+    // 2) If token has not expired, and there is reviewer, set the new password
+    if (!reviewer) {
+        throw new AppError('Token is invalid or has expired', 400);
+    }
+    reviewer.password = password;
+    reviewer.passwordResetToken = undefined;
+    reviewer.passwordResetExpires = undefined;
+    await reviewer.save();
+
+    return reviewer;
+};
+
 module.exports = {
     signToken,
     createSendToken,
@@ -585,6 +644,8 @@ module.exports = {
     permanentlyDeleteReviewer,
     updateMyProfile,
     checkUsernameAvailability,
+    forgotPassword,
+    resetPassword,
 };
 
 

@@ -8,6 +8,8 @@ const router = express.Router();
 router.post('/register', reviewerController.register);
 router.post('/login', reviewerController.login);
 router.get('/check-username', reviewerController.checkUsername);
+router.post('/forgot-password', reviewerController.forgotPassword);
+router.patch('/reset-password/:token', reviewerController.resetPassword);
 
 // Protected routes (authenticated users)
 router.post('/logout', protect, reviewerController.logout);

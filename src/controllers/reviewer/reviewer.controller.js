@@ -244,6 +244,33 @@ const checkUsername = catchAsync(async (req, res) => {
     }, exists ? 'Username is already taken' : 'Username is available');
 });
 
+/**
+ * @desc    Forgot password
+ * @route   POST /api/v1/reviewer/forgot-password
+ * @access  Public
+ */
+const forgotPassword = catchAsync(async (req, res) => {
+    const { email, resetUrlBase } = req.body;
+
+    // Default reset URL base if not provided (should be handled by frontend)
+    const urlBase = resetUrlBase || `${req.protocol}://${req.get('host')}/reviewer/reset-password`;
+
+    await reviewerService.forgotPassword(email, urlBase);
+    ApiResponse.success(res, null, 'Password reset token sent to email!');
+});
+
+/**
+ * @desc    Reset password
+ * @route   PATCH /api/v1/reviewer/reset-password/:token
+ * @access  Public
+ */
+const resetPassword = catchAsync(async (req, res) => {
+    const reviewer = await reviewerService.resetPassword(req.params.token, req.body.password);
+    const { token, reviewer: reviewerData } = reviewerService.createSendToken(reviewer, 200, res);
+
+    ApiResponse.success(res, { reviewer: reviewerData, token }, 'Password reset successfully');
+});
+
 module.exports = {
     register,
     login,
@@ -260,5 +287,7 @@ module.exports = {
     permanentlyDeleteReviewer,
     updateMyProfile,
     checkUsername,
+    forgotPassword,
+    resetPassword,
 };
 
