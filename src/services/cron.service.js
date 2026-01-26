@@ -40,13 +40,14 @@ class CronService {
         try {
             logger.info('Starting daily review reminders task');
 
-            const SystemConfig = require('../models/systemConfig.model');
             const config = await SystemConfig.getSettings();
 
-            if (!config.receive_message_on_whatsapp_in_review_schedule) {
-                logger.info('WhatsApp notifications are disabled in system configuration');
+            if (!config.receive_message_on_whatsapp_in_review_schedule || !config.send_review_reminder_to_group) {
+                logger.info('WhatsApp review reminders are disabled in system configuration');
                 return;
             }
+
+            const groupId = config.whapi?.groupId || '120363417698652224@g.us';
 
             // Get start and end of today in IST
             const startOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 0, 0, 0, 0);
@@ -79,9 +80,9 @@ class CronService {
                     reviewerName: review.reviewer?.fullName || review.reviewer?.username || 'Unassigned'
                 };
 
-                // Send to Management Group instead of student number
-                await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_REMINDER', notificationData);
-                logger.info(`Daily reminder for ${studentName} sent to group`);
+                // Send to dynamic Group ID
+                await whatsappService.sendNotification(groupId, 'REVIEW_REMINDER', notificationData);
+                logger.info(`Daily reminder for ${studentName} sent to group ${groupId}`);
             }
 
             logger.info(`Finished daily review reminders. Sent ${reviews.length} messages.`);
@@ -140,13 +141,17 @@ class CronService {
                         date: review.scheduledDate
                     };
 
-                    // Send to Management Group instead of student number
-                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_REMINDER', notificationData);
+                    const groupId = config.whapi?.groupId || '120363417698652224@g.us';
 
-                    // Mark as sent
-                    await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
+                    if (config.send_review_reminder_to_group) {
+                        // Send to dynamic Group ID
+                        await whatsappService.sendNotification(groupId, 'REVIEW_REMINDER', notificationData);
 
-                    logger.info(`30-min reminder for ${student?.name} sent to group`);
+                        // Mark as sent
+                        await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
+
+                        logger.info(`30-min reminder for ${student?.name} sent to group ${groupId}`);
+                    }
                 }
             }
         } catch (error) {

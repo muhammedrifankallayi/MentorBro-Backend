@@ -79,8 +79,12 @@ const create = async (reviewData) => {
                 secondTime: populatedReview.secondScheduledTime
             };
 
-            // Send to Management Group
-            await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_SCHEDULED', notificationData);
+            const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+
+            if (config.send_review_scheduled_to_group) {
+                // Send to dynamic Group ID
+                await whatsappService.sendNotification(groupId, 'REVIEW_SCHEDULED', notificationData);
+            }
         }
     } catch (whatsappError) {
         // Log but don't fail the operation if WhatsApp fails
@@ -437,8 +441,12 @@ const update = async (id, updateData) => {
                     score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0)
                 };
 
-                // Management Group
-                await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_COMPLETED', notificationData);
+                const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+
+                if (config.send_review_completed_to_group) {
+                    // Management Group
+                    await whatsappService.sendNotification(groupId, 'REVIEW_COMPLETED', notificationData);
+                }
             }
         } catch (whError) {
             console.error('Failed to send WhatsApp completion notification:', whError.message);
@@ -463,8 +471,12 @@ const update = async (id, updateData) => {
                         date: taskReview.scheduledDate
                     };
 
-                    // Management Group
-                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_ASSIGNED', notificationData);
+                    const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+
+                    if (config.send_reviewer_assignment_to_group) {
+                        // Management Group
+                        await whatsappService.sendNotification(groupId, 'REVIEWER_ASSIGNED', notificationData);
+                    }
                 } else if (previousReviewerId && !newReviewerId) {
                     const notificationData = {
                         studentName: taskReview.student?.name,
@@ -473,8 +485,12 @@ const update = async (id, updateData) => {
                         date: taskReview.scheduledDate
                     };
 
-                    // Management Group
-                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_UNASSIGNED', notificationData);
+                    const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+
+                    if (config.send_reviewer_assignment_to_group) {
+                        // Management Group
+                        await whatsappService.sendNotification(groupId, 'REVIEWER_UNASSIGNED', notificationData);
+                    }
                 }
             }
         } catch (whError) {

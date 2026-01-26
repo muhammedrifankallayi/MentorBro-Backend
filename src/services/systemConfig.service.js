@@ -49,6 +49,18 @@ const updateConfig = async (updateData) => {
         if (updateData.receive_message_on_whatsapp_in_review_schedule !== undefined) {
             config.receive_message_on_whatsapp_in_review_schedule = updateData.receive_message_on_whatsapp_in_review_schedule;
         }
+        if (updateData.send_review_reminder_to_group !== undefined) {
+            config.send_review_reminder_to_group = updateData.send_review_reminder_to_group;
+        }
+        if (updateData.send_review_scheduled_to_group !== undefined) {
+            config.send_review_scheduled_to_group = updateData.send_review_scheduled_to_group;
+        }
+        if (updateData.send_review_completed_to_group !== undefined) {
+            config.send_review_completed_to_group = updateData.send_review_completed_to_group;
+        }
+        if (updateData.send_reviewer_assignment_to_group !== undefined) {
+            config.send_reviewer_assignment_to_group = updateData.send_reviewer_assignment_to_group;
+        }
 
         await config.save();
     }

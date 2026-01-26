@@ -5,7 +5,8 @@ const systemConfigSchema = new mongoose.Schema(
         whapi: {
             token: { type: String, trim: true },
             apiUrl: { type: String, trim: true, default: 'https://gate.whapi.cloud' },
-            defaultNumber: { type: String, trim: true }
+            defaultNumber: { type: String, trim: true },
+            groupId: { type: String, trim: true, default: '120363417698652224@g.us' }
         },
         brevo: {
             apiKey: { type: String, trim: true },
@@ -22,6 +23,22 @@ const systemConfigSchema = new mongoose.Schema(
             default: true
         },
         receive_message_on_whatsapp_in_review_schedule: {
+            type: Boolean,
+            default: true
+        },
+        send_review_reminder_to_group: {
+            type: Boolean,
+            default: true
+        },
+        send_review_scheduled_to_group: {
+            type: Boolean,
+            default: true
+        },
+        send_review_completed_to_group: {
+            type: Boolean,
+            default: true
+        },
+        send_reviewer_assignment_to_group: {
             type: Boolean,
             default: true
         },
