@@ -164,22 +164,14 @@ const createReviewerByAdmin = async (reviewerData, loginUrl = null) => {
     // Send credentials email
     if (email) {
         try {
-            // BREVO SMTP Integration
-            const brevoMailer = require('../utils/brevo.mailer');
-            await brevoMailer.sendReviewerCredentialsEmail(email, {
+            // BREVO Cloud API Integration
+            const mailer = require('../utils/mailer');
+            await mailer.sendReviewerCredentialsEmail(email, {
                 fullName: reviewer.fullName || username,
                 username,
                 password: generatedPassword,
                 loginUrl
             });
-
-            // const mailer = require('../utils/mailer');
-            // await mailer.sendReviewerCredentialsEmail(email, {
-            //     fullName: reviewer.fullName || username, // Use actual fullName from reviewer or username
-            //     username,
-            //     password: generatedPassword,
-            //     loginUrl
-            // });
         } catch (emailError) {
             // Log error but don't fail the creation
             const logger = require('../utils/logger');

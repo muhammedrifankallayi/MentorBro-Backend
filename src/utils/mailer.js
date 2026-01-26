@@ -1,24 +1,37 @@
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 const logger = require('./logger');
 const SystemConfig = require('../models/systemConfig.model');
 
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+// Initialize Brevo SDK client
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
 
 /**
- * Get Brevo API configuration
- * @returns {Promise<Object>} Brevo config with apiKey, senderEmail, senderName
+ * Configure Brevo SDK with API Key from DB or Environment
+ * @returns {Promise<Object>} Brevo configuration
  */
-const getBrevoConfig = async () => {
+const configureBrevo = async () => {
   const dbConfig = await SystemConfig.findOne({ isActive: true });
 
-  return {
+  const config = {
     apiKey: dbConfig?.brevo?.apiKey || process.env.BREVO_API_KEY,
     senderEmail: dbConfig?.brevo?.senderEmail || process.env.EMAIL_FROM_ADDRESS || 'noreply@yourmentorbro.com',
     senderName: dbConfig?.brevo?.senderName || process.env.EMAIL_FROM_NAME || 'MentorBro'
   };
+
+  if (!config.apiKey) {
+    logger.error('Brevo API key not configured');
+    throw new Error('Email service not configured. Please set BREVO_API_KEY.');
+  }
+
+  // Configure SDK
+  const apiKey = defaultClient.authentications['api-key'];
+  apiKey.apiKey = config.apiKey;
+
+  return config;
 };
 
 /**
- * Send an email using Brevo HTTP API
+ * Send an email using Brevo Transactional Email API (SDK)
  * @param {Object} options - Email options
  * @param {string} options.to - Recipient email
  * @param {string} options.subject - Email subject
@@ -29,47 +42,28 @@ const getBrevoConfig = async () => {
  */
 const sendEmail = async (options) => {
   try {
-    const brevoConfig = await getBrevoConfig();
+    const brevoConfig = await configureBrevo();
 
-    if (!brevoConfig.apiKey) {
-      logger.error('Brevo API key not configured');
-      throw new Error('Email service not configured. Please set BREVO_API_KEY.');
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+    sendSmtpEmail.subject = options.subject;
+    sendSmtpEmail.htmlContent = options.html;
+    if (options.text) {
+      sendSmtpEmail.textContent = options.text;
     }
 
-    // Build the email payload
-    const emailPayload = {
-      sender: {
-        email: brevoConfig.senderEmail,
-        name: brevoConfig.senderName
-      },
-      to: [{
-        email: options.to,
-        name: options.toName || options.to
-      }],
-      subject: options.subject,
-      htmlContent: options.html,
+    sendSmtpEmail.sender = {
+      name: brevoConfig.senderName,
+      email: brevoConfig.senderEmail
     };
 
-    // Add text content if provided
-    if (options.text) {
-      emailPayload.textContent = options.text;
-    }
+    sendSmtpEmail.to = [{
+      email: options.to,
+      name: options.toName || options.to
+    }];
 
-    const response = await fetch(BREVO_API_URL, {
-      method: 'POST',
-      headers: {
-        'api-key': brevoConfig.apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(emailPayload)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      logger.error('Brevo API error:', result);
-      throw new Error(result.message || 'Failed to send email via Brevo');
-    }
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
 
     logger.info(`Email sent successfully to ${options.to}. Message ID: ${result.messageId}`);
 
@@ -78,7 +72,54 @@ const sendEmail = async (options) => {
       messageId: result.messageId,
     };
   } catch (error) {
-    logger.error('Failed to send email via Brevo:', error.message);
+    logger.error('Failed to send email via Brevo SDK:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Create an email campaign using Brevo SDK
+ * @param {Object} options - Campaign options
+ * @param {string} options.name - Campaign name
+ * @param {string} options.subject - Campaign subject
+ * @param {string} options.html - HTML content
+ * @param {Object} options.recipients - Recipients (e.g., { listIds: [2, 7] })
+ * @param {string} [options.scheduledAt] - Schedule time (optional)
+ * @returns {Promise<Object>}
+ */
+const createEmailCampaign = async (options) => {
+  try {
+    const brevoConfig = await configureBrevo();
+
+    const apiInstance = new SibApiV3Sdk.EmailCampaignsApi();
+    const emailCampaigns = new SibApiV3Sdk.CreateEmailCampaign();
+
+    emailCampaigns.name = options.name || "Campaign sent via the API";
+    emailCampaigns.subject = options.subject;
+    emailCampaigns.sender = {
+      name: brevoConfig.senderName,
+      email: brevoConfig.senderEmail
+    };
+    emailCampaigns.type = "classic";
+    emailCampaigns.htmlContent = options.html;
+
+    // Select the recipients
+    if (options.recipients) {
+      emailCampaigns.recipients = options.recipients;
+    } else if (options.listIds) {
+      emailCampaigns.recipients = { listIds: options.listIds };
+    }
+
+    // Schedule the sending
+    if (options.scheduledAt) {
+      emailCampaigns.scheduledAt = options.scheduledAt;
+    }
+
+    const data = await apiInstance.createEmailCampaign(emailCampaigns);
+    logger.info('Email campaign created successfully via SDK. ID: ' + data.id);
+    return data;
+  } catch (error) {
+    logger.error('Failed to create email campaign via Brevo SDK:', error.message);
     throw error;
   }
 };
@@ -349,6 +390,7 @@ The MentorBro Team
 
 module.exports = {
   sendEmail,
+  createEmailCampaign,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendVerificationEmail,
