@@ -81,11 +81,6 @@ const create = async (reviewData) => {
 
             // Send to Management Group
             await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_SCHEDULED', notificationData);
-
-            // Send to Student
-            if (populatedReview.student?.mobileNo) {
-                await whatsappService.sendNotification(populatedReview.student.mobileNo, 'REVIEW_SCHEDULED', notificationData);
-            }
         }
     } catch (whatsappError) {
         // Log but don't fail the operation if WhatsApp fails
@@ -444,11 +439,6 @@ const update = async (id, updateData) => {
 
                 // Management Group
                 await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_COMPLETED', notificationData);
-
-                // Student
-                if (taskReview.student?.mobileNo) {
-                    await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEW_COMPLETED', notificationData);
-                }
             }
         } catch (whError) {
             console.error('Failed to send WhatsApp completion notification:', whError.message);
@@ -475,11 +465,6 @@ const update = async (id, updateData) => {
 
                     // Management Group
                     await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_ASSIGNED', notificationData);
-
-                    // Student
-                    if (taskReview.student?.mobileNo) {
-                        await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEWER_ASSIGNED', notificationData);
-                    }
                 } else if (previousReviewerId && !newReviewerId) {
                     const notificationData = {
                         studentName: taskReview.student?.name,
@@ -490,11 +475,6 @@ const update = async (id, updateData) => {
 
                     // Management Group
                     await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEWER_UNASSIGNED', notificationData);
-
-                    // Student
-                    if (taskReview.student?.mobileNo) {
-                        await whatsappService.sendNotification(taskReview.student.mobileNo, 'REVIEWER_UNASSIGNED', notificationData);
-                    }
                 }
             }
         } catch (whError) {

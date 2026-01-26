@@ -68,13 +68,20 @@ class CronService {
 
             for (const review of reviews) {
                 const student = review.student;
-                if (!student || !student.mobileNo) continue;
+                const studentName = student?.name || 'Student';
 
-                const studentName = student.name || 'Student';
-                const message = `Hi *${studentName}*,\nMeeting Link: \nscheduled on *${todayFormatted}*\nPlease join the meeting.\nThank you.`;
+                // Using a standardized notification format for the group
+                const notificationData = {
+                    studentName: studentName,
+                    taskName: review.programTask?.name || 'Task Review',
+                    time: review.confirmedTime || review.scheduledTime,
+                    date: review.scheduledDate,
+                    reviewerName: review.reviewer?.fullName || review.reviewer?.username || 'Unassigned'
+                };
 
-                await whatsappService.sendTextMessage(student.mobileNo, message);
-                logger.info(`Daily reminder sent to ${studentName} (${student.mobileNo})`);
+                // Send to Management Group instead of student number
+                await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_REMINDER', notificationData);
+                logger.info(`Daily reminder for ${studentName} sent to group`);
             }
 
             logger.info(`Finished daily review reminders. Sent ${reviews.length} messages.`);
@@ -123,24 +130,23 @@ class CronService {
                 // If scheduled in exactly 30 minutes (catch 29-31 range)
                 if (diffMins >= 29 && diffMins <= 30) {
                     const student = review.student;
-                    if (student && student.mobileNo) {
-                        const notificationData = {
-                            studentName: student.name,
-                            studentUsername: student.username,
-                            studentEmail: student.email,
-                            reviewerName: review.reviewer?.fullName || review.reviewer?.username || review.reviewer?.email || 'Mentor',
-                            taskName: review.programTask?.name || 'Task Review',
-                            time: review.confirmedTime || review.scheduledTime,
-                            date: review.scheduledDate
-                        };
+                    const notificationData = {
+                        studentName: student?.name || 'Student',
+                        studentUsername: student?.username,
+                        studentEmail: student?.email,
+                        reviewerName: review.reviewer?.fullName || review.reviewer?.username || review.reviewer?.email || 'Mentor',
+                        taskName: review.programTask?.name || 'Task Review',
+                        time: review.confirmedTime || review.scheduledTime,
+                        date: review.scheduledDate
+                    };
 
-                        await whatsappService.sendNotification(student.mobileNo, 'REVIEW_REMINDER', notificationData);
+                    // Send to Management Group instead of student number
+                    await whatsappService.sendNotification('120363417698652224@g.us', 'REVIEW_REMINDER', notificationData);
 
-                        // Mark as sent
-                        await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
+                    // Mark as sent
+                    await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
 
-                        logger.info(`30-min reminder sent to ${student.name} for review at ${review.scheduledTime}`);
-                    }
+                    logger.info(`30-min reminder for ${student?.name} sent to group`);
                 }
             }
         } catch (error) {
