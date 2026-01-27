@@ -364,7 +364,7 @@ const resetPassword = async (token, password) => {
     student.password = password;
     student.passwordResetToken = undefined;
     student.passwordResetExpires = undefined;
-    await student.save();
+    await student.save({ validateBeforeSave: false });
 
     return student;
 };

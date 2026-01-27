@@ -7,8 +7,8 @@ const { catchAsync, ApiResponse } = require('../../utils');
  * @access  Public
  */
 const register = catchAsync(async (req, res) => {
-    const { username, password } = req.body;
-    const reviewer = await reviewerService.register(username, password);
+    const { username, password, email, fullName } = req.body;
+    const reviewer = await reviewerService.register(username, password, email, fullName);
     const { token, reviewer: reviewerData } = reviewerService.createSendToken(reviewer, 201, res);
 
     ApiResponse.success(res, { reviewer: reviewerData, token }, 'Reviewer registered successfully', 201);

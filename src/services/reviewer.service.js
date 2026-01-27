@@ -42,22 +42,30 @@ const createSendToken = (reviewer, statusCode, res) => {
 /**
  * Register a new reviewer
  */
-const register = async (username, password) => {
-    // Check if username and password exist
-    if (!username || !password) {
-        throw new AppError('Please provide username and password', 400);
+const register = async (username, password, email, fullName) => {
+    // Check if username, password and email exist
+    if (!username || !password || !email) {
+        throw new AppError('Please provide username, password and email', 400);
     }
 
-    // Check if reviewer already exists
-    const existingReviewer = await Reviewer.findOne({ username });
-    if (existingReviewer) {
+    // Check if reviewer already exists by username
+    const existingUsername = await Reviewer.findOne({ username });
+    if (existingUsername) {
         throw new AppError('Username already exists', 400);
+    }
+
+    // Check if reviewer already exists by email
+    const existingEmail = await Reviewer.findOne({ email });
+    if (existingEmail) {
+        throw new AppError('Email already exists', 400);
     }
 
     // Create new reviewer
     const reviewer = await Reviewer.create({
         username,
         password,
+        email,
+        fullName,
     });
 
     return reviewer;
@@ -627,7 +635,7 @@ const resetPassword = async (token, password) => {
     reviewer.password = password;
     reviewer.passwordResetToken = undefined;
     reviewer.passwordResetExpires = undefined;
-    await reviewer.save();
+    await reviewer.save({ validateBeforeSave: false });
 
     return reviewer;
 };
