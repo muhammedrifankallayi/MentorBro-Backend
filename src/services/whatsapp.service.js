@@ -13,7 +13,7 @@ class WhatsAppService {
      * @param {string} message - The message content
      * @returns {Promise<Object>}
      */
-    async sendTextMessage(to, message) {
+    async sendTextMessage(to, message, options = {}) {
         if (!(await whapi.isConfigured())) {
             logger.warn('WhatsApp service requested but Whapi not configured');
             return { success: false, error: 'WhatsApp service not configured' };
@@ -47,7 +47,7 @@ class WhatsAppService {
                 recipient = recipient + '@s.whatsapp.net';
             }
 
-            const result = await whapi.sendTextMessage(recipient, message);
+            const result = await whapi.sendTextMessage(recipient, message, options);
             return { success: true, data: result };
         } catch (error) {
             logger.error(`Failed to send WhatsApp message to ${to || 'default'}:`, error.message);
@@ -62,7 +62,7 @@ class WhatsAppService {
      * @param {Object} data - Data to populate message
      * @returns {Promise<Object>}
      */
-    async sendNotification(to, type, data) {
+    async sendNotification(to, type, data, options = {}) {
         let message = '';
 
         // Format Date to dd/mm/yyyy if possible
@@ -92,6 +92,14 @@ class WhatsAppService {
             case 'REVIEW_REMINDER':
                 const revHeader = data.reviewerName ? ` for *${data.reviewerName}*` : '';
                 message = `⏰ *Review Reminder${revHeader}*\n\nStudent: *${studentName}*${batchInfo}\n\nFriendly reminder that your review for *${data.taskName}* is scheduled for today at *${data.time}*.\n\nPlease be ready on time. Good luck!`;
+
+                if (data.reviewerMobile) {
+                    const formattedMobile = data.reviewerMobile.replace(/\D/g, '');
+                    const mentionId = formattedMobile.length === 10 ? `91${formattedMobile}` : formattedMobile;
+                    message = `@${mentionId} ${message}`;
+                    if (!options.mentions) options.mentions = [];
+                    options.mentions.push(`${mentionId}@s.whatsapp.net`);
+                }
                 break;
             case 'REVIEWER_ASSIGNED':
                 const reviewerName = data.reviewerName || data.reviewerUsername || data.reviewerEmail || 'Mentor';
@@ -107,6 +115,14 @@ class WhatsAppService {
                 const status = data.status ? `\n*Status:* ${data.status}` : '';
                 const score = data.score !== undefined ? `\n*Total Score:* ${data.score}/20` : '';
                 message = `✅ *Review Completed*\n\nReview for *${studentName}* for *${data.taskName}* has been completed.${status}${score}\n\nWell done!`;
+
+                if (data.mentionNumber) {
+                    const formattedMobile = data.mentionNumber.replace(/\D/g, '');
+                    const mentionId = formattedMobile.length === 10 ? `91${formattedMobile}` : formattedMobile;
+                    message = `${message}\n\ncc: @${mentionId}`;
+                    if (!options.mentions) options.mentions = [];
+                    options.mentions.push(`${mentionId}@s.whatsapp.net`);
+                }
                 break;
             case 'REVIEWER_UNASSIGNED':
                 message = `👤 *Reviewer Unassigned*\n\nReview for *${studentName}* on *${formattedDate}* at *${data.time}* is now *UNASSIGNED* and available for other reviewers.`;
@@ -119,7 +135,7 @@ class WhatsAppService {
             return { success: false, error: 'No message content provided' };
         }
 
-        return this.sendTextMessage(to, message);
+        return this.sendTextMessage(to, message, options);
     }
 }
 

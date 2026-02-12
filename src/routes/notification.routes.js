@@ -29,4 +29,7 @@ router.post('/unsubscribe', notificationController.unsubscribeFromTopic);
 // Send a test notification (for testing purposes)
 router.post('/send-test', notificationController.sendTestNotification);
 
+// Send notification to all reviewers (admin only)
+router.post('/send-to-reviewers', notificationController.sendToAllReviewers);
+
 module.exports = router;

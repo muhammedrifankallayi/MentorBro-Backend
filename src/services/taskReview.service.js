@@ -438,7 +438,8 @@ const update = async (id, updateData) => {
                     studentEmail: taskReview.student?.email,
                     taskName: taskReview.programTask?.name || 'Task Review',
                     status: taskReview.reviewStatus,
-                    score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0)
+                    score: (taskReview.scoreInPractical || 0) + (taskReview.scoreInTheory || 0),
+                    mentionNumber: '918157867616'
                 };
 
                 const groupId = config.whapi?.groupId || '120363417698652224@g.us';

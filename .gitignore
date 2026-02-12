@@ -36,3 +36,4 @@ temp/
 firebase-service-account.json
 *-service-account.json
 *.pem
+firebasecredential.json

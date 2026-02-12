@@ -115,7 +115,7 @@ class CronService {
                 isReminderSent: { $ne: true }
             }).populate('student', 'name mobileNo email')
                 .populate('programTask', 'name')
-                .populate('reviewer', 'fullName username email');
+                .populate('reviewer', 'fullName username email mobileNo');
 
             for (const review of reviews) {
                 if (!review.scheduledTime) continue;
@@ -138,7 +138,8 @@ class CronService {
                         reviewerName: review.reviewer?.fullName || review.reviewer?.username || review.reviewer?.email || 'Mentor',
                         taskName: review.programTask?.name || 'Task Review',
                         time: review.confirmedTime || review.scheduledTime,
-                        date: review.scheduledDate
+                        date: review.scheduledDate,
+                        reviewerMobile: review.reviewer?.mobileNo
                     };
 
                     const groupId = config.whapi?.groupId || '120363417698652224@g.us';

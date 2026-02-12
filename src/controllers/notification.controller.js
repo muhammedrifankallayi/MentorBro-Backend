@@ -34,16 +34,11 @@ const registerToken = async (req, res) => {
             });
         }
 
-        // TODO: Save the FCM token to your database
-        // Example: You might want to store this in a separate collection or add it to the user/reviewer/student model
-        // 
-        // await UserFcmToken.findOneAndUpdate(
-        //     { userId, fcmToken },
-        //     { userId, fcmToken, deviceType, lastUpdated: new Date() },
-        //     { upsert: true, new: true }
-        // );
+        // Save the FCM token to the user's record
+        req.user.fcmToken = fcmToken;
+        await req.user.save({ validateBeforeSave: false });
 
-        console.log(`📱 FCM token registered for user ${userId}: ${fcmToken.substring(0, 20)}...`);
+        console.log(`📱 FCM token registered for ${req.user.role} ${userId}: ${fcmToken.substring(0, 20)}...`);
 
         res.status(200).json({
             success: true,
@@ -79,11 +74,12 @@ const unregisterToken = async (req, res) => {
 
         const userId = req.user?.id || req.user?._id;
 
-        // TODO: Remove the FCM token from your database
-        // 
-        // await UserFcmToken.deleteOne({ userId, fcmToken });
-
-        console.log(`📱 FCM token unregistered for user ${userId}`);
+        // Remove the FCM token from the user's record
+        if (req.user.fcmToken === fcmToken) {
+            req.user.fcmToken = undefined;
+            await req.user.save({ validateBeforeSave: false });
+            console.log(`📱 FCM token unregistered for ${req.user.role} ${userId}`);
+        }
 
         res.status(200).json({
             success: true,
@@ -257,11 +253,76 @@ const getStatus = async (req, res) => {
     }
 };
 
+/**
+ * Send notification to all reviewers (Admin only)
+ * 
+ * @route POST /api/v1/notification/send-to-reviewers
+ * @body { title: string, body: string, data?: object }
+ */
+const sendToAllReviewers = async (req, res) => {
+    try {
+        const { title, body, data } = req.body;
+
+        if (!title || !body) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title and body are required',
+            });
+        }
+
+        // Get all reviewers with FCM tokens
+        const Reviewer = require('../models/reviewer.model');
+        const reviewers = await Reviewer.find({ fcmToken: { $exists: true, $ne: null } }).select('fcmToken fullName username');
+
+        if (reviewers.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No reviewers with registered devices found',
+                sentCount: 0,
+            });
+        }
+
+        const fcmTokens = reviewers.map(r => r.fcmToken).filter(Boolean);
+
+        if (fcmTokens.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No valid FCM tokens found',
+                sentCount: 0,
+            });
+        }
+
+        const result = await notificationService.sendToDevices(fcmTokens, {
+            title,
+            body,
+            data: data || {},
+        });
+
+        console.log(`📢 Admin sent notification to ${result.successCount} reviewers: "${title}"`);
+
+        res.status(200).json({
+            success: true,
+            message: `Notification sent to ${result.successCount} reviewer(s)`,
+            successCount: result.successCount,
+            failureCount: result.failureCount,
+        });
+
+    } catch (error) {
+        console.error('Error sending notification to reviewers:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to send notification to reviewers',
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     registerToken,
     unregisterToken,
     subscribeToTopic,
     unsubscribeFromTopic,
     sendTestNotification,
+    sendToAllReviewers,
     getStatus,
 };

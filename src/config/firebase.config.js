@@ -52,8 +52,19 @@ const initializeFirebase = () => {
         }
 
         // Second, try to load from service account JSON file
-        const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-            path.join(__dirname, 'firebase-service-account.json');
+        const rootPath = path.join(__dirname, '../../');
+        const rootCredentialPath = path.join(rootPath, 'firebasecredential.json');
+
+        let serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+        // If not in env, check various common locations
+        if (!serviceAccountPath) {
+            if (fs.existsSync(rootCredentialPath)) {
+                serviceAccountPath = rootCredentialPath;
+            } else {
+                serviceAccountPath = path.join(__dirname, 'firebase-service-account.json');
+            }
+        }
 
         if (fs.existsSync(serviceAccountPath)) {
             const serviceAccount = require(serviceAccountPath);
