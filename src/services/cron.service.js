@@ -26,10 +26,15 @@ class CronService {
                 this.sendDailyReviewReminders(istDate);
             }
 
-            // 2. 30-Minute Upcoming Review Reminders (Checked every minute)
+            // 2. Daily Meeting Message at 7:00 AM IST
+            if (hours === 7 && minutes === 0) {
+                this.sendDailyMeetingMessage(istDate);
+            }
+
+            // 3. 30-Minute Upcoming Review Reminders (Checked every minute)
             this.send30MinReminders(istDate);
 
-        }, 60000); // Check every 60 seconds
+        }, 600000); // Check every 600 seconds
     }
 
     /**
@@ -88,6 +93,34 @@ class CronService {
             logger.info(`Finished daily review reminders. Sent ${reviews.length} messages.`);
         } catch (error) {
             logger.error('Error in daily review reminders task:', error.message);
+        }
+    }
+
+    /**
+     * Send daily meeting message at 7 AM IST to WhatsApp group
+     * @param {Date} currentIstDate - Current date/time in IST
+     */
+    async sendDailyMeetingMessage(currentIstDate) {
+        try {
+            logger.info('Starting daily meeting message task');
+
+            const SystemConfig = require('../models/systemConfig.model');
+            const config = await SystemConfig.getSettings();
+            const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+
+            // Format date as "Feb 14 2026"
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const day = currentIstDate.getDate();
+            const month = monthNames[currentIstDate.getMonth()];
+            const year = currentIstDate.getFullYear();
+            const formattedDate = `${month} ${day} ${year}`;
+
+            const message = `Hi             ,\nMeeting Link: \nscheduled on ${formattedDate}\nPlease join the meeting.\nThank you.`;
+
+            await whatsappService.sendTextMessage(groupId, message);
+            logger.info(`Daily meeting message sent to group ${groupId} for ${formattedDate}`);
+        } catch (error) {
+            logger.error('Error in daily meeting message task:', error.message);
         }
     }
 
