@@ -307,6 +307,112 @@ const getByBatch = async (batchId, queryParams = {}) => {
 };
 
 /**
+ * Get batch ranking for a student's batch
+ * @param {string} studentId - Current student ID
+ * @param {string} batchFilterId - Optional explicit batch ID
+ */
+const getBatchRanking = async (studentId, batchFilterId = null) => {
+    // 1. Find the student to get their batch
+    const student = await Student.findById(studentId);
+    if (!student) {
+        throw new AppError('Student not found', 404);
+    }
+
+    // Use explicit batch or student's own batch
+    const targetBatch = batchFilterId || student.batch;
+
+    if (!targetBatch) {
+        throw new AppError('No batch assigned to student', 400);
+    }
+
+    // 2. Aggregate all students in this batch and calculate scores
+    const ranking = await Student.aggregate([
+        {
+            $match: {
+                batch: targetBatch,
+                isActive: { $ne: false },
+                // Only consider approved/active students for ranking if necessary
+            }
+        },
+        {
+            $lookup: {
+                from: 'taskreviews', // collection name in MongoDB is typically lowercase plural
+                let: { studentId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: { $eq: ['$student', '$$studentId'] },
+                            isActive: { $ne: false } // Only active reviews
+                        }
+                    }
+                ],
+                as: 'reviews'
+            }
+        },
+        {
+            $addFields: {
+                totalScore: {
+                    $reduce: {
+                        input: '$reviews',
+                        initialValue: 0,
+                        in: {
+                            $cond: {
+                                // Add scores ONLY if reviewStatus is not 'failed'
+                                if: { $ne: ['$$this.reviewStatus', 'failed'] },
+                                then: {
+                                    $add: [
+                                        '$$value',
+                                        { $ifNull: ['$$this.scoreInTheory', 0] },
+                                        { $ifNull: ['$$this.scoreInPractical', 0] }
+                                    ]
+                                },
+                                else: '$$value'
+                            }
+                        }
+                    }
+                },
+                totalFailed: {
+                    $size: {
+                        $filter: {
+                            input: '$reviews',
+                            as: 'review',
+                            cond: { $eq: ['$$review.reviewStatus', 'failed'] }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $sort: { totalScore: -1, name: 1 } // Sort by score DESC, then name ASC
+        },
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                email: 1,
+                totalScore: 1,
+                totalFailed: 1
+            }
+        }
+    ]);
+
+    // Format output with rankings
+    const formattedRanking = ranking.map((st, index) => ({
+        ...st,
+        position: index + 1
+    }));
+
+    const myPosition = formattedRanking.find(st => st._id.toString() === studentId.toString());
+
+    return {
+        batchId: targetBatch,
+        students: formattedRanking,
+        myPosition: myPosition ? myPosition.position : null,
+        myDetails: myPosition || null
+    };
+};
+
+/**
  * Send password reset email
  * @param {string} email - Student email
  * @param {string} resetUrl - Frontend reset URL
@@ -382,6 +488,7 @@ module.exports = {
     getByApprovalStatus,
     updateApprovalStatus,
     getByBatch,
+    getBatchRanking,
 };
 
 

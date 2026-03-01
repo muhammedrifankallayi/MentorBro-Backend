@@ -14,6 +14,7 @@ router.patch('/reset-password/:token', studentController.resetPassword);
 router.use(protect);
 router.post('/logout', studentController.logout);
 router.get('/me', studentController.getMe);
+router.get('/batch-ranking', studentController.getBatchRanking);
 router.patch('/me', studentController.updateMe);
 router.patch('/update-my-password', studentController.updateMyPassword);
 

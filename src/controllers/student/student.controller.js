@@ -61,6 +61,16 @@ const updateMe = catchAsync(async (req, res) => {
 });
 
 /**
+ * @desc    Get student batch ranking
+ * @route   GET /api/v1/student/batch-ranking
+ * @access  Private
+ */
+const getBatchRanking = catchAsync(async (req, res) => {
+    const data = await studentService.getBatchRanking(req.user._id);
+    ApiResponse.success(res, data, 'Batch ranking retrieved successfully');
+});
+
+/**
  * @desc    Update current student password
  * @route   PATCH /api/v1/student/update-my-password
  * @access  Private
@@ -109,5 +119,6 @@ module.exports = {
     updateMyPassword,
     forgotPassword,
     resetPassword,
+    getBatchRanking,
 };
 
