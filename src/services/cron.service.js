@@ -1,40 +1,44 @@
+const cron = require('node-cron');
 const TaskReview = require('../models/taskReview.model');
 const whatsappService = require('./whatsapp.service');
 const logger = require('../utils/logger');
 
 /**
- * Service to handle scheduled tasks without external dependencies like node-cron
+ * Service to handle scheduled tasks using node-cron
  */
 class CronService {
+    /**
+     * Get current IST date by converting system local time 
+     */
+    getIstDate() {
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        return new Date(now.getTime() + istOffset + (now.getTimezoneOffset() * 60000));
+    }
+
     /**
      * Initialize the cron checker
      */
     init() {
-        logger.info('Cron service initialized (Zero-dependency mode)');
+        logger.info('Cron service initialized (using node-cron)');
 
-        setInterval(() => {
-            const now = new Date();
-            // Convert to IST (UTC + 5:30) point in time representing IST components locally
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            const istDate = new Date(now.getTime() + istOffset + (now.getTimezoneOffset() * 60000));
+        // 1. Daily Summary Reminder at 5:00 AM IST
+        cron.schedule('0 5 * * *', () => {
+            const istDate = this.getIstDate();
+            this.sendDailyReviewReminders(istDate);
+        }, { timezone: 'Asia/Kolkata' });
 
-            const hours = istDate.getHours();
-            const minutes = istDate.getMinutes();
+        // 2. Daily Meeting Message at 7:00 AM IST
+        cron.schedule('0 7 * * *', () => {
+            const istDate = this.getIstDate();
+            this.sendDailyMeetingMessage(istDate);
+        }, { timezone: 'Asia/Kolkata' });
 
-            // 1. Daily Summary Reminder at 5:00 AM IST
-            if (hours === 5 && minutes === 0) {
-                this.sendDailyReviewReminders(istDate);
-            }
-
-            // 2. Daily Meeting Message at 7:00 AM IST
-            if (hours === 7 && minutes === 0) {
-                this.sendDailyMeetingMessage(istDate);
-            }
-
-            // 3. 30-Minute Upcoming Review Reminders (Checked every minute)
+        // 3. 30-Minute Upcoming Review Reminders (Checked every minute)
+        cron.schedule('* * * * *', () => {
+            const istDate = this.getIstDate();
             this.send30MinReminders(istDate);
-
-        }, 600000); // Check every 600 seconds
+        }, { timezone: 'Asia/Kolkata' });
     }
 
     /**
