@@ -379,6 +379,9 @@ const getBatchRanking = async (studentId, batchFilterId = null) => {
                             cond: { $eq: ['$$review.reviewStatus', 'failed'] }
                         }
                     }
+                },
+                totalReviews: {
+                    $size: '$reviews'
                 }
             }
         },
@@ -391,7 +394,8 @@ const getBatchRanking = async (studentId, batchFilterId = null) => {
                 name: 1,
                 email: 1,
                 totalScore: 1,
-                totalFailed: 1
+                totalFailed: 1,
+                totalReviews: 1
             }
         }
     ]);
