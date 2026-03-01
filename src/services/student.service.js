@@ -342,7 +342,8 @@ const getBatchRanking = async (studentId, batchFilterId = null) => {
                     {
                         $match: {
                             $expr: { $eq: ['$student', '$$studentId'] },
-                            isActive: { $ne: false } // Only active reviews
+                            isActive: { $ne: false }, // Only active reviews
+                            isCancelled: { $ne: true } // Exclude cancelled reviews
                         }
                     }
                 ],
@@ -381,7 +382,13 @@ const getBatchRanking = async (studentId, batchFilterId = null) => {
                     }
                 },
                 totalReviews: {
-                    $size: '$reviews'
+                    $size: {
+                        $filter: {
+                            input: '$reviews',
+                            as: 'review',
+                            cond: { $ne: ['$$review.reviewStatus', 'failed'] }
+                        }
+                    }
                 }
             }
         },
