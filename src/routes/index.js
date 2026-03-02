@@ -11,6 +11,7 @@ const uploadRoutes = require('./upload');
 const notificationRoutes = require('./notification.routes');
 const whatsappRoutes = require('./whatsapp.routes');
 const issueRoutes = require('./issue');
+const publicConfigRoutes = require('./publicConfig.routes');
 
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.use('/upload', uploadRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/issues', issueRoutes);
+router.use('/public-config', publicConfigRoutes);
 
 
 module.exports = router;

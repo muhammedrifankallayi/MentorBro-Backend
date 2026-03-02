@@ -5,6 +5,7 @@ const Program = require('./program.model');
 const ProgramTask = require('./programTask.model');
 const TaskReview = require('./taskReview.model');
 const SystemConfig = require('./systemConfig.model');
+const PublicConfig = require('./publicConfig.model');
 const Batch = require('./batch.model');
 const Issue = require('./issue.model');
 
@@ -16,9 +17,7 @@ module.exports = {
     ProgramTask,
     TaskReview,
     SystemConfig,
+    PublicConfig,
     Batch,
     Issue,
 };
-
-
-
