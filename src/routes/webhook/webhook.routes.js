@@ -15,13 +15,13 @@ router.post('/github', handleGitHubWebhook);
  * @desc    Handle webhook for WORK frontend deployment
  * @access  Public
  */
-router.get('/work', handleWorkWebhook);
+router.post('/work', handleWorkWebhook);
 
 /**
  * @route   POST /api/v1/webhook/learn
  * @desc    Handle webhook for LEARN frontend deployment
  * @access  Public
  */
-router.get('/learn', handleLearnWebhook);
+router.post('/learn', handleLearnWebhook);
 
 module.exports = router;
