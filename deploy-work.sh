@@ -8,11 +8,6 @@ cd /var/www/MentorBro-Reviewer
 echo "📥 Pulling latest code"
 git pull origin main
 
-echo "📦 Installing dependencies"
-npm i --force
-
-echo "🏗️ Building Angular app"
-npm run build
 
 echo "🧹 Cleaning old build"
 rm -rf /var/www/work/*
