@@ -5,6 +5,8 @@ echo "🚀 Deploying WORK frontend"
 
 cd /var/www/MentorBroManagement-Student
 
+rm -rf /var/www/MentorBroManagement-Student/dist
+
 echo "📥 Pulling latest code"
 git pull origin main
 

@@ -4,6 +4,7 @@ set -ex
 echo "🚀 Deploying WORK frontend"
 
 cd /var/www/MentorBro-Reviewer
+rm -rf /var/www/MentorBro-Reviewer/dist
 
 echo "📥 Pulling latest code"
 git pull origin main
