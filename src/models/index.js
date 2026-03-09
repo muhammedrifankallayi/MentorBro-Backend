@@ -8,7 +8,7 @@ const SystemConfig = require('./systemConfig.model');
 const PublicConfig = require('./publicConfig.model');
 const Batch = require('./batch.model');
 const Issue = require('./issue.model');
-
+const CommonCertificate = require('./commonCertificate.model');
 module.exports = {
     Student,
     Reviewer,
@@ -20,4 +20,5 @@ module.exports = {
     PublicConfig,
     Batch,
     Issue,
+    CommonCertificate,
 };

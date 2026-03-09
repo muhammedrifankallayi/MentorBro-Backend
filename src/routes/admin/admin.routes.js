@@ -3,6 +3,7 @@ const adminController = require('../../controllers/admin');
 const issueAdminController = require('../../controllers/issue/issue.admin.controller');
 const systemConfigRoutes = require('./systemConfig.routes');
 const mailRoutes = require('./mail.routes');
+const commonCertificateRoutes = require('./commonCertificate.routes');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
 
 const router = express.Router();
@@ -38,6 +39,9 @@ router.get('/issues', issueAdminController.getAllIssues);
 router.get('/issues/:id', issueAdminController.getIssueById);
 router.patch('/issues/:id/status', issueAdminController.updateIssueStatus);
 router.delete('/issues/:id', issueAdminController.deleteIssue);
+
+// Common Certification Routes
+router.use('/common-certificates', commonCertificateRoutes);
 
 module.exports = router;
 

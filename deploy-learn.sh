@@ -2,10 +2,10 @@
 set -ex
 
 echo "🚀 Deploying WORK frontend"
-
+rm -rf /var/www/MentorBroManagement-Student/dist
 cd /var/www/MentorBroManagement-Student
 
-rm -rf /var/www/MentorBroManagement-Student/dist
+
 
 echo "📥 Pulling latest code"
 git pull origin main
