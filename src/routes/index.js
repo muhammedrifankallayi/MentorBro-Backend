@@ -12,7 +12,7 @@ const notificationRoutes = require('./notification.routes');
 const whatsappRoutes = require('./whatsapp.routes');
 const issueRoutes = require('./issue');
 const publicConfigRoutes = require('./publicConfig.routes');
-
+const aiCourseReviewRoutes = require('./aiCourseReview.routes');
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.use('/notification', notificationRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/issues', issueRoutes);
 router.use('/public-config', publicConfigRoutes);
-
+router.use('/ai-course-reviews', aiCourseReviewRoutes);
 
 module.exports = router;
 

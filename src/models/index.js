@@ -9,6 +9,8 @@ const PublicConfig = require('./publicConfig.model');
 const Batch = require('./batch.model');
 const Issue = require('./issue.model');
 const CommonCertificate = require('./commonCertificate.model');
+const AiCourseReview = require('./aiCourseReview.model');
+
 module.exports = {
     Student,
     Reviewer,
@@ -21,4 +23,5 @@ module.exports = {
     Batch,
     Issue,
     CommonCertificate,
+    AiCourseReview,
 };
