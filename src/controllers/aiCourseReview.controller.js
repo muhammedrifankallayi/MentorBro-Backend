@@ -46,8 +46,30 @@ const deleteReview = async (req, res, next) => {
     }
 };
 
+const uploadImage = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No image file provided'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Image uploaded successfully',
+            data: {
+                url: req.file.path
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     addReview,
     getList,
-    deleteReview
+    deleteReview,
+    uploadImage
 };

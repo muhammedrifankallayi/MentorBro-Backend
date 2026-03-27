@@ -1,5 +1,6 @@
 const express = require('express');
-const { addReview, getList, deleteReview } = require('../controllers/aiCourseReview.controller');
+const { addReview, getList, deleteReview, uploadImage } = require('../controllers/aiCourseReview.controller');
+const { imageUpload, handleUploadError } = require('../middleware/upload.middleware');
 
 const router = express.Router();
 
@@ -16,6 +17,18 @@ router.get('/', getList);
  * @access  Public
  */
 router.post('/', addReview);
+
+/**
+ * @route   POST /api/v1/ai-course-reviews/upload-image
+ * @desc    Upload an image for the review (returns the image URL)
+ * @access  Public
+ */
+router.post(
+    '/upload-image',
+    imageUpload.single('image'),
+    handleUploadError,
+    uploadImage
+);
 
 /**
  * @route   DELETE /api/v1/ai-course-reviews/:id
