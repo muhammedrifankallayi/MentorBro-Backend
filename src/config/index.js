@@ -24,6 +24,7 @@ module.exports = {
             'https://work.yourmentorbro.com',
             'https://manage.yourmentorbro.com',
             "https://yourmentorbro.com",
+            "http://localhost:5173",
 
             process.env.CORS_ORIGIN,
         ].filter(Boolean),
