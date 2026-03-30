@@ -14,7 +14,6 @@ const aiCourseReviewSchema = new mongoose.Schema(
         },
         image: {
             type: String,
-            required: [true, 'Image URL is required'],
             trim: true
         },
         companyName: {
