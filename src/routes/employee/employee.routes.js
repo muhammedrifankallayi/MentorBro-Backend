@@ -1,6 +1,6 @@
 const express = require('express');
 const { employeeController } = require('../../controllers/employee');
-const validate = require('../../middleware/validate');
+const { validate } = require('../../middleware');
 const { employeeValidation } = require('../../validations');
 const { protect } = require('../../middleware/auth.middleware');
 
