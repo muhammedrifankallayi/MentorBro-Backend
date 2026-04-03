@@ -13,6 +13,7 @@ const whatsappRoutes = require('./whatsapp.routes');
 const issueRoutes = require('./issue');
 const publicConfigRoutes = require('./publicConfig.routes');
 const aiCourseReviewRoutes = require('./aiCourseReview.routes');
+const employeeRoutes = require('./employee');
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get('/health', (req, res) => {
 router.use('/student', studentRoutes);
 router.use('/reviewer', reviewerRoutes);
 router.use('/admin', adminRoutes);
+router.use('/employee', employeeRoutes);
 router.use('/batch', batchRoutes);
 router.use('/program', programRoutes);
 router.use('/program-task', programTaskRoutes);

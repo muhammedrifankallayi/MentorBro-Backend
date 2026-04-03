@@ -10,6 +10,7 @@ const Batch = require('./batch.model');
 const Issue = require('./issue.model');
 const CommonCertificate = require('./commonCertificate.model');
 const AiCourseReview = require('./aiCourseReview.model');
+const Employee = require('./employee.model');
 
 module.exports = {
     Student,
@@ -24,4 +25,5 @@ module.exports = {
     Issue,
     CommonCertificate,
     AiCourseReview,
+    Employee,
 };

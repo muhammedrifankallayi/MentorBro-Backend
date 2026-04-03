@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { AppError, catchAsync } = require('../utils');
-const { Admin, Reviewer, Student } = require('../models');
+const { Admin, Reviewer, Student, Employee } = require('../models');
 const config = require('../config');
 
 /**
@@ -12,6 +12,8 @@ const getModelByRole = (role) => {
             return Admin;
         case 'reviewer':
             return Reviewer;
+        case 'employee':
+            return Employee;
         case 'student':
         default:
             return Student;
