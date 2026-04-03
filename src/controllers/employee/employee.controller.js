@@ -10,7 +10,7 @@ const register = catchAsync(async (req, res) => {
     const employee = await employeeService.register(req.body);
     const { token, employee: employeeData } = employeeService.createSendToken(employee, 201, res);
 
-    ApiResponse.created(res, { student: employeeData, token }, 'Employee registered successfully');
+    ApiResponse.created(res, { employee: employeeData, token }, 'Employee registered successfully');
 });
 
 /**
@@ -23,7 +23,7 @@ const login = catchAsync(async (req, res) => {
     const employee = await employeeService.login(email, password);
     const { token, employee: employeeData } = employeeService.createSendToken(employee, 200, res);
 
-    ApiResponse.success(res, { student: employeeData, token }, 'Logged in successfully');
+    ApiResponse.success(res, { employee: employeeData, token }, 'Logged in successfully');
 });
 
 /**
@@ -70,7 +70,7 @@ const updateMyPassword = catchAsync(async (req, res) => {
     const employee = await employeeService.updatePassword(req.user._id, currentPassword, newPassword);
     const { token, employee: employeeData } = employeeService.createSendToken(employee, 200, res);
 
-    ApiResponse.success(res, { student: employeeData, token }, 'Password updated successfully');
+    ApiResponse.success(res, { employee: employeeData, token }, 'Password updated successfully');
 });
 
 /**
@@ -96,7 +96,7 @@ const resetPassword = catchAsync(async (req, res) => {
     const employee = await employeeService.resetPassword(req.params.token, req.body.password);
     const { token, employee: employeeData } = employeeService.createSendToken(employee, 200, res);
 
-    ApiResponse.success(res, { student: employeeData, token }, 'Password reset successfully');
+    ApiResponse.success(res, { employee: employeeData, token }, 'Password reset successfully');
 });
 
 module.exports = {

@@ -5,6 +5,8 @@ const systemConfigRoutes = require('./systemConfig.routes');
 const mailRoutes = require('./mail.routes');
 const commonCertificateRoutes = require('./commonCertificate.routes');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
+const Employee = require('../../models/employee.model');
+const { catchAsync, ApiResponse } = require('../../utils');
 
 const router = express.Router();
 
@@ -42,6 +44,59 @@ router.delete('/issues/:id', issueAdminController.deleteIssue);
 
 // Common Certification Routes
 router.use('/common-certificates', commonCertificateRoutes);
+
+// Employee management routes
+router.get('/employees', catchAsync(async (req, res) => {
+    const { page = 1, limit = 20, search = '', status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const query = {};
+    if (search) {
+        query.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+        ];
+    }
+    if (status) query.approvalStatus = status;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+
+    const [data, total] = await Promise.all([
+        Employee.find(query).sort(sort).skip(skip).limit(Number(limit)),
+        Employee.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+        success: true,
+        message: 'Employees fetched successfully',
+        data,
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+    });
+}));
+
+router.post('/employees', catchAsync(async (req, res) => {
+    const { name, email, password, mobileNo, address, approvalStatus } = req.body;
+    const employee = await Employee.create({ name, email, password, mobileNo, address, approvalStatus: approvalStatus || 'approved' });
+    employee.password = undefined;
+    ApiResponse.created(res, employee, 'Employee created successfully');
+}));
+
+router.patch('/employees/:id/approval', catchAsync(async (req, res) => {
+    const { approvalStatus } = req.body;
+    const employee = await Employee.findByIdAndUpdate(req.params.id, { approvalStatus }, { new: true, runValidators: true });
+    if (!employee) return res.status(404).json({ success: false, message: 'Employee not found' });
+    ApiResponse.success(res, employee, 'Approval status updated');
+}));
+
+router.put('/employees/:id', catchAsync(async (req, res) => {
+    const allowed = ['name', 'email', 'mobileNo', 'address', 'approvalStatus', 'isActive'];
+    const update = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+    const employee = await Employee.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
+    if (!employee) return res.status(404).json({ success: false, message: 'Employee not found' });
+    ApiResponse.success(res, employee, 'Employee updated');
+}));
 
 module.exports = router;
 

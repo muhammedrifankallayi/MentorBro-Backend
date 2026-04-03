@@ -7,7 +7,14 @@ const { AppError } = require('../utils');
  */
 const validate = (schema, property = 'body') => {
     return (req, res, next) => {
-        const { error, value } = schema.validate(req[property], {
+        // Support both direct Joi schemas and { body, params, query } objects
+        const joiSchema = schema.validate ? schema : schema[property];
+
+        if (!joiSchema) {
+            return next();
+        }
+
+        const { error, value } = joiSchema.validate(req[property], {
             abortEarly: false, // Return all errors, not just the first one
             stripUnknown: true, // Remove unknown fields
         });
