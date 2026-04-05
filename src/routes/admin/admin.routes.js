@@ -8,6 +8,7 @@ const { protect, restrictTo } = require('../../middleware/auth.middleware');
 const Employee = require('../../models/employee.model');
 const { catchAsync, ApiResponse } = require('../../utils');
 const attendanceService = require('../../services/attendance.service');
+const employeeTaskService = require('../../services/employeeTask.service');
 
 const router = express.Router();
 
@@ -109,6 +110,38 @@ router.get('/attendance', catchAsync(async (req, res) => {
         total: result.total,
         pages: result.pages,
     }, 'Attendance records fetched successfully');
+}));
+
+// Employee Task management routes
+router.get('/employee-tasks', catchAsync(async (req, res) => {
+    const { page = 1, limit = 20, search = '', status, priority, employeeId } = req.query;
+    const result = await employeeTaskService.getAllForAdmin({ page, limit, search, status, priority, employeeId });
+    ApiResponse.list(res, result.data, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        pages: result.pages,
+    }, 'Tasks fetched successfully');
+}));
+
+router.post('/employee-tasks', catchAsync(async (req, res) => {
+    const task = await employeeTaskService.createTask(req.body);
+    ApiResponse.created(res, task, 'Task created successfully');
+}));
+
+router.get('/employee-tasks/:id', catchAsync(async (req, res) => {
+    const task = await employeeTaskService.getById(req.params.id);
+    ApiResponse.success(res, task, 'Task retrieved successfully');
+}));
+
+router.put('/employee-tasks/:id', catchAsync(async (req, res) => {
+    const task = await employeeTaskService.updateTask(req.params.id, req.body);
+    ApiResponse.success(res, task, 'Task updated successfully');
+}));
+
+router.delete('/employee-tasks/:id', catchAsync(async (req, res) => {
+    await employeeTaskService.deleteTask(req.params.id);
+    ApiResponse.success(res, null, 'Task deleted successfully');
 }));
 
 module.exports = router;
