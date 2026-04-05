@@ -10,12 +10,28 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Deploy
+      - name: Sync files to app directory
         run: |
-          rsync -a --exclude='node_modules' --exclude='.git' ./ /var/www/MentorBro-Backend/
+          rsync -a --delete \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.env' \
+            ./ /var/www/MentorBro-Backend/
+
+      - name: Install dependencies
+        run: |
           cd /var/www/MentorBro-Backend
           npm install --omit=dev
-          sudo pm2 restart mentorbro-api
-          echo "✅ Deploy finished"
+
+      - name: Restart app with PM2
+        run: |
+          cd /var/www/MentorBro-Backend
+          pm2 reload mentorbro-api --update-env 2>/dev/null || pm2 start server.js --name mentorbro-api
+          pm2 save
+
+      - name: Health check
+        run: |
+          sleep 3
+          pm2 show mentorbro-api | grep -q "online" && echo "✅ App is online" || (echo "❌ App failed to start" && pm2 logs mentorbro-api --lines 20 && exit 1)
