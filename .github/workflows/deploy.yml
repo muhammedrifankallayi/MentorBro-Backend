@@ -1,0 +1,21 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy
+        run: |
+          rsync -a --exclude='node_modules' --exclude='.git' ./ /var/www/MentorBro-Backend/
+          cd /var/www/MentorBro-Backend
+          npm install --omit=dev
+          sudo pm2 restart mentorbro-api
+          echo "✅ Deploy finished"

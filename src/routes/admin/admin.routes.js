@@ -7,6 +7,7 @@ const commonCertificateRoutes = require('./commonCertificate.routes');
 const { protect, restrictTo } = require('../../middleware/auth.middleware');
 const Employee = require('../../models/employee.model');
 const { catchAsync, ApiResponse } = require('../../utils');
+const attendanceService = require('../../services/attendance.service');
 
 const router = express.Router();
 
@@ -96,6 +97,18 @@ router.put('/employees/:id', catchAsync(async (req, res) => {
     const employee = await Employee.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
     if (!employee) return res.status(404).json({ success: false, message: 'Employee not found' });
     ApiResponse.success(res, employee, 'Employee updated');
+}));
+
+// Attendance management routes
+router.get('/attendance', catchAsync(async (req, res) => {
+    const { page = 1, limit = 20, search = '', startDate, endDate, employeeId } = req.query;
+    const result = await attendanceService.getAllForAdmin({ page, limit, search, startDate, endDate, employeeId });
+    ApiResponse.list(res, result.data, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        pages: result.pages,
+    }, 'Attendance records fetched successfully');
 }));
 
 module.exports = router;
