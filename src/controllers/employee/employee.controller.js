@@ -74,6 +74,16 @@ const updateMyPassword = catchAsync(async (req, res) => {
 });
 
 /**
+ * @desc    Complete onboarding
+ * @route   PATCH /api/v1/employee/onboarding
+ * @access  Private
+ */
+const completeOnboarding = catchAsync(async (req, res) => {
+    const employee = await employeeService.completeOnboarding(req.user._id, req.body);
+    ApiResponse.success(res, employee, 'Onboarding completed successfully');
+});
+
+/**
  * @desc    Forgot password
  * @route   POST /api/v1/employee/forgot-password
  * @access  Public
@@ -106,6 +116,7 @@ module.exports = {
     getMe,
     updateMe,
     updateMyPassword,
+    completeOnboarding,
     forgotPassword,
     resetPassword,
 };

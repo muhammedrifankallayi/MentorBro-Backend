@@ -1,7 +1,7 @@
 const express = require('express');
 const uploadController = require('../../controllers/upload');
 const { protect } = require('../../middleware/auth.middleware');
-const { imageUpload, handleUploadError } = require('../../middleware/upload.middleware');
+const { imageUpload, documentUpload, handleUploadError } = require('../../middleware/upload.middleware');
 
 const router = express.Router();
 
@@ -32,6 +32,19 @@ router.post(
     imageUpload.array('images', 10),
     handleUploadError,
     uploadController.uploadMultiple
+);
+
+/**
+ * @route   POST /api/v1/upload/document
+ * @desc    Upload a proof document (Aadhaar, Driving Licence, Passport) — image or PDF
+ * @access  Private
+ * @body    Form-data with 'document' field
+ */
+router.post(
+    '/document',
+    documentUpload.single('document'),
+    handleUploadError,
+    uploadController.uploadDocument
 );
 
 /**

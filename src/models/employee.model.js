@@ -38,6 +38,25 @@ const employeeSchema = new mongoose.Schema(
             trim: true,
             maxlength: [200, 'Address cannot be more than 200 characters'],
         },
+        dateOfBirth: {
+            type: Date,
+        },
+        education: {
+            type: String,
+            trim: true,
+            maxlength: [200, 'Education cannot be more than 200 characters'],
+        },
+        proofType: {
+            type: String,
+            enum: ['aadhaar', 'driving_licence', 'passport'],
+        },
+        proofDocument: {
+            type: String, // Cloudinary URL
+        },
+        isOnboarded: {
+            type: Boolean,
+            default: false,
+        },
         isActive: {
             type: Boolean,
             default: true,

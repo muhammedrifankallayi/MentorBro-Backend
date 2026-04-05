@@ -168,6 +168,33 @@ const resetPassword = async (token, password) => {
 };
 
 /**
+ * Complete onboarding
+ */
+const completeOnboarding = async (employeeId, data) => {
+    const { mobileNo, dateOfBirth, education, proofType, proofDocument, address } = data;
+
+    const employee = await Employee.findByIdAndUpdate(
+        employeeId,
+        {
+            mobileNo,
+            dateOfBirth,
+            education,
+            proofType,
+            proofDocument,
+            ...(address && { address }),
+            isOnboarded: true,
+        },
+        { new: true, runValidators: true }
+    );
+
+    if (!employee) {
+        throw new AppError('Employee not found', 404);
+    }
+
+    return employee;
+};
+
+/**
  * Update profile
  */
 const updateProfile = async (employeeId, updateData) => {
@@ -213,4 +240,5 @@ module.exports = {
     getById,
     updatePassword,
     updateProfile,
+    completeOnboarding,
 };

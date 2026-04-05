@@ -53,6 +53,32 @@ const updateProfileSchema = {
     }),
 };
 
+const onboardingSchema = {
+    body: Joi.object().keys({
+        mobileNo: Joi.string().pattern(/^\d{10}$/).required().messages({
+            'string.empty': 'Mobile number is required',
+            'string.pattern.base': 'Please provide a valid 10-digit mobile number',
+        }),
+        dateOfBirth: Joi.date().iso().max('now').required().messages({
+            'date.base': 'Please provide a valid date of birth',
+            'date.max': 'Date of birth cannot be in the future',
+        }),
+        education: Joi.string().min(2).max(200).required().messages({
+            'string.empty': 'Education is required',
+            'string.min': 'Education must be at least 2 characters',
+        }),
+        proofType: Joi.string().valid('aadhaar', 'driving_licence', 'passport').required().messages({
+            'any.only': 'Proof type must be aadhaar, driving_licence, or passport',
+            'string.empty': 'Proof type is required',
+        }),
+        proofDocument: Joi.string().uri().required().messages({
+            'string.empty': 'Proof document URL is required',
+            'string.uri': 'Please provide a valid document URL',
+        }),
+        address: Joi.string().max(200),
+    }),
+};
+
 const forgotPasswordSchema = {
     body: Joi.object().keys({
         email: Joi.string().email().required(),
@@ -74,6 +100,7 @@ module.exports = {
     loginSchema,
     updatePasswordSchema,
     updateProfileSchema,
+    onboardingSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
 };

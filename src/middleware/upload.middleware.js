@@ -9,6 +9,11 @@ const path = require('path');
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 /**
+ * Allowed file types for document uploads (images + PDF)
+ */
+const ALLOWED_DOCUMENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+
+/**
  * File filter for image uploads
  */
 const imageFileFilter = (req, file, cb) => {
@@ -16,6 +21,17 @@ const imageFileFilter = (req, file, cb) => {
         cb(null, true);
     } else {
         cb(new Error(`Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`), false);
+    }
+};
+
+/**
+ * File filter for document uploads (images + PDF)
+ */
+const documentFileFilter = (req, file, cb) => {
+    if (ALLOWED_DOCUMENT_TYPES.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`Invalid file type. Allowed types: jpg, png, webp, pdf`), false);
     }
 };
 
@@ -46,6 +62,26 @@ const createCloudinaryStorage = (options = {}) => {
                 public_id: `${filename}-${uniqueSuffix}`,
                 allowed_formats: allowedFormats,
                 transformation: transformation,
+            };
+        },
+    });
+};
+
+/**
+ * Create Cloudinary storage for documents (images + PDF)
+ * Uses resource_type: 'auto' so Cloudinary handles both images and raw files
+ */
+const createDocumentStorage = (folder = 'mentorbro/documents') => {
+    return new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: async (req, file) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+            const filename = path.parse(file.originalname).name;
+            return {
+                folder: folder,
+                public_id: `${filename}-${uniqueSuffix}`,
+                resource_type: 'auto',
+                allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
             };
         },
     });
@@ -115,6 +151,18 @@ const studentUpload = createImageUpload({
 });
 
 /**
+ * Upload middleware for employee proof documents (Aadhaar, Driving Licence, Passport)
+ * Accepts: jpg, png, webp, pdf
+ * Folder: mentorbro/employee-documents
+ * Max size: 10MB
+ */
+const documentUpload = multer({
+    storage: createDocumentStorage('mentorbro/employee-documents'),
+    fileFilter: documentFileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
+
+/**
  * Error handling middleware for multer errors
  */
 const handleUploadError = (error, req, res, next) => {
@@ -144,10 +192,13 @@ const handleUploadError = (error, req, res, next) => {
 module.exports = {
     createImageUpload,
     createCloudinaryStorage,
+    createDocumentStorage,
     profileUpload,
     imageUpload,
     taskImageUpload,
     studentUpload,
+    documentUpload,
     handleUploadError,
     ALLOWED_IMAGE_TYPES,
+    ALLOWED_DOCUMENT_TYPES,
 };

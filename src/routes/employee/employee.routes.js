@@ -38,6 +38,11 @@ router.use(protect); // All routes below this line require authentication
 
 router.get('/me', employeeController.getMe);
 router.patch(
+    '/onboarding',
+    validate(employeeValidation.onboardingSchema),
+    employeeController.completeOnboarding
+);
+router.patch(
     '/me',
     validate(employeeValidation.updateProfileSchema),
     employeeController.updateMe

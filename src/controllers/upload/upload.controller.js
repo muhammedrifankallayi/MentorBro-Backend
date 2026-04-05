@@ -51,6 +51,27 @@ const uploadMultiple = catchAsync(async (req, res) => {
 });
 
 /**
+ * @desc    Upload a proof document (Aadhaar, Driving Licence, Passport)
+ * @route   POST /api/v1/upload/document
+ * @access  Private
+ */
+const uploadDocument = catchAsync(async (req, res) => {
+    if (!req.file) {
+        return ApiResponse.badRequest(res, 'No document file provided');
+    }
+
+    const documentData = {
+        url: req.file.path,
+        publicId: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+    };
+
+    ApiResponse.success(res, { document: documentData }, 'Document uploaded successfully');
+});
+
+/**
  * @desc    Delete an image by URL or public ID
  * @route   DELETE /api/v1/upload/delete
  * @access  Private
@@ -86,5 +107,6 @@ const deleteUploadedImage = catchAsync(async (req, res) => {
 module.exports = {
     uploadSingle,
     uploadMultiple,
+    uploadDocument,
     deleteUploadedImage,
 };
