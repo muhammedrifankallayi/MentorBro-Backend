@@ -27,12 +27,24 @@ const createTask = async (taskData) => {
 /**
  * Get all tasks (admin view) with filters and pagination
  */
-const getAllForAdmin = async ({ page = 1, limit = 20, search = '', status, priority, employeeId } = {}) => {
+const getAllForAdmin = async ({ page = 1, limit = 20, search = '', status, priority, employeeId, date } = {}) => {
     const query = { isActive: true };
 
     if (employeeId) query.assignedTo = employeeId;
     if (status) query.status = status;
     if (priority) query.priority = priority;
+
+    // Filter tasks by a specific date (matches deadline OR createdAt on that day)
+    if (date) {
+        const start = new Date(date);
+        start.setUTCHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setUTCHours(23, 59, 59, 999);
+        query.$or = [
+            { deadline: { $gte: start, $lte: end } },
+            { createdAt: { $gte: start, $lte: end } },
+        ];
+    }
 
     if (search && search.trim()) {
         query.title = { $regex: search.trim(), $options: 'i' };

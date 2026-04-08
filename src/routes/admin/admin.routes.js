@@ -101,6 +101,24 @@ router.put('/employees/:id', catchAsync(async (req, res) => {
 }));
 
 // Attendance management routes
+router.get('/attendance/monthly-report', catchAsync(async (req, res) => {
+    const now = new Date();
+    const y = req.query.year  ? Number(req.query.year)  : now.getUTCFullYear();
+    const m = req.query.month ? Number(req.query.month) : now.getUTCMonth() + 1;
+    const data = await attendanceService.getMonthlyReportForAdmin(y, m);
+    res.status(200).json({ success: true, message: 'Monthly report fetched successfully', data });
+}));
+
+router.get('/attendance/calendar', catchAsync(async (req, res) => {
+    const { employeeId, year, month } = req.query;
+    if (!employeeId) return res.status(400).json({ success: false, message: 'employeeId is required' });
+    const now = new Date();
+    const y = year ? Number(year) : now.getUTCFullYear();
+    const m = month ? Number(month) : now.getUTCMonth() + 1;
+    const days = await attendanceService.getCalendarForAdmin(employeeId, y, m);
+    res.status(200).json({ success: true, message: 'Calendar fetched successfully', data: days });
+}));
+
 router.get('/attendance', catchAsync(async (req, res) => {
     const { page = 1, limit = 20, search = '', startDate, endDate, employeeId } = req.query;
     const result = await attendanceService.getAllForAdmin({ page, limit, search, startDate, endDate, employeeId });
@@ -114,8 +132,8 @@ router.get('/attendance', catchAsync(async (req, res) => {
 
 // Employee Task management routes
 router.get('/employee-tasks', catchAsync(async (req, res) => {
-    const { page = 1, limit = 20, search = '', status, priority, employeeId } = req.query;
-    const result = await employeeTaskService.getAllForAdmin({ page, limit, search, status, priority, employeeId });
+    const { page = 1, limit = 20, search = '', status, priority, employeeId, date } = req.query;
+    const result = await employeeTaskService.getAllForAdmin({ page, limit, search, status, priority, employeeId, date });
     ApiResponse.list(res, result.data, {
         page: result.page,
         limit: result.limit,

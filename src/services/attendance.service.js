@@ -121,4 +121,154 @@ const getAllForAdmin = async ({ page = 1, limit = 20, search = '', startDate, en
     };
 };
 
-module.exports = { checkIn, checkOut, getToday, getAllForAdmin };
+/**
+ * Get monthly attendance calendar for a specific employee (admin view)
+ */
+const getCalendarForAdmin = async (employeeId, year, month) => {
+    if (!employeeId) throw new AppError('employeeId is required', 400);
+
+    const y = Number(year);
+    const m = Number(month); // 1-indexed
+
+    const startOfMonth = new Date(Date.UTC(y, m - 1, 1));
+    const endOfMonth = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+
+    const records = await Attendance.find({
+        employee: employeeId,
+        date: { $gte: startOfMonth, $lte: endOfMonth },
+    }).sort({ date: 1 });
+
+    // Map: 'YYYY-MM-DD' -> record
+    const recordMap = {};
+    records.forEach((r) => {
+        const key = r.date.toISOString().split('T')[0];
+        recordMap[key] = r;
+    });
+
+    const todayUTC = new Date();
+    const todayStr = `${todayUTC.getUTCFullYear()}-${String(todayUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(todayUTC.getUTCDate()).padStart(2, '0')}`;
+
+    const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const days = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const record = recordMap[dateStr];
+
+        let status;
+        if (dateStr > todayStr) {
+            status = 'future';
+        } else if (!record || !record.checkIn) {
+            status = 'absent';
+        } else if (record.checkIn && record.checkOut) {
+            status = 'present';
+        } else {
+            status = 'not_checked_out';
+        }
+
+        days.push({
+            date: dateStr,
+            day: d,
+            weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), // 0=Sun, 6=Sat
+            status,
+            checkIn: record?.checkIn || null,
+            checkOut: record?.checkOut || null,
+            totalWorkedMinutes: record?.totalWorkedMinutes || 0,
+        });
+    }
+
+    return days;
+};
+
+/**
+ * Get monthly attendance report for ALL approved employees (admin view)
+ * Returns each employee with day-by-day status codes and totals.
+ *
+ * Status codes:
+ *   Y = present (checked in + out)
+ *   P = partial (checked in, no checkout)
+ *   N = absent / no-show
+ *   H = weekend (non-working)
+ *   F = future date
+ */
+const getMonthlyReportForAdmin = async (year, month) => {
+    const y = Number(year);
+    const m = Number(month); // 1-indexed
+
+    const startOfMonth = new Date(Date.UTC(y, m - 1, 1));
+    const endOfMonth   = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+    const daysInMonth  = new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+    const now = new Date();
+    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+
+    // Fetch all approved employees (active only, enforced by pre-find hook)
+    const employees = await Employee.find({ approvalStatus: 'approved' })
+        .select('name email')
+        .lean();
+
+    // Fetch all attendance records for the month in one query
+    const records = await Attendance.find({
+        date: { $gte: startOfMonth, $lte: endOfMonth },
+    }).lean();
+
+    // Build lookup: employeeId -> { 'YYYY-MM-DD': record }
+    const recordMap = {};
+    records.forEach((r) => {
+        const empId = r.employee.toString();
+        if (!recordMap[empId]) recordMap[empId] = {};
+        const key = r.date.toISOString().split('T')[0];
+        recordMap[empId][key] = r;
+    });
+
+    const result = employees.map((emp) => {
+        const empRecords = recordMap[emp._id.toString()] || {};
+        const days = [];
+        const totals = { Y: 0, P: 0, N: 0, H: 0, F: 0 };
+        let workdaysSoFar = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=Sun
+            const isWeekend = weekday === 0 || weekday === 6;
+            const isFuture  = dateStr > todayStr;
+
+            let status;
+            if (isWeekend) {
+                status = 'H';
+                totals.H++;
+            } else if (isFuture) {
+                status = 'F';
+                totals.F++;
+            } else {
+                workdaysSoFar++;
+                const rec = empRecords[dateStr];
+                if (rec?.checkIn && rec?.checkOut) {
+                    status = 'Y'; totals.Y++;
+                } else if (rec?.checkIn) {
+                    status = 'P'; totals.P++;
+                } else {
+                    status = 'N'; totals.N++;
+                }
+            }
+
+            days.push({ day: d, weekday, status });
+        }
+
+        const attendancePct = workdaysSoFar > 0
+            ? Math.round((totals.Y / workdaysSoFar) * 100)
+            : 0;
+
+        return {
+            _id:  emp._id,
+            name: emp.name,
+            email: emp.email,
+            days,
+            totals: { ...totals, attendancePct },
+        };
+    });
+
+    return { year: y, month: m, daysInMonth, employees: result };
+};
+
+module.exports = { checkIn, checkOut, getToday, getAllForAdmin, getCalendarForAdmin, getMonthlyReportForAdmin };
