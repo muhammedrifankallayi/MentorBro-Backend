@@ -496,6 +496,7 @@ const updateMyProfile = async (reviewerId, updateData) => {
         'address',
         'totalExperience',
         'currentCompany',
+        'googleMeetLink',
     ];
 
     // Filter out any fields that are not allowed

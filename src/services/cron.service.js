@@ -155,10 +155,11 @@ class CronService {
                 .populate('reviewer', 'fullName username email mobileNo');
 
             for (const review of reviews) {
-                if (!review.scheduledTime) continue;
+                const targetTime = review.confirmedTime || review.scheduledTime;
+                if (!targetTime) continue;
 
                 // Parse time into a date object sharing the same timezone context as currentIstDate
-                const scheduledTimeIst = this._parseTimeToDate(currentIstDate, review.scheduledTime);
+                const scheduledTimeIst = this._parseTimeToDate(currentIstDate, targetTime);
                 if (!scheduledTimeIst) continue;
 
                 // Difference in minutes

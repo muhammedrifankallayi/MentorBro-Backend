@@ -59,7 +59,7 @@ const create = async (reviewData) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     // Send WhatsApp notification if enabled
     try {
@@ -192,7 +192,7 @@ const getAll = async (queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'fullName username email mobileNo')
+            .populate('reviewer', 'fullName username email mobileNo googleMeetLink')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -227,7 +227,7 @@ const getById = async (id) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week tasks re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -267,7 +267,7 @@ const getByStudentId = async (studentId, queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'fullName username email mobileNo')
+            .populate('reviewer', 'fullName username email mobileNo googleMeetLink')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -316,7 +316,7 @@ const getByReviewerId = async (reviewerId, queryParams = {}) => {
             })
             .populate('program', 'name totalWeeks')
             .populate('programTask', 'name week re_review_fine_amount')
-            .populate('reviewer', 'fullName username email mobileNo')
+            .populate('reviewer', 'fullName username email mobileNo googleMeetLink')
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit)),
@@ -419,7 +419,7 @@ const update = async (id, updateData) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -548,7 +548,7 @@ const cancel = async (id, cancellationReason) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     if (!taskReview) {
         throw new AppError('Task review not found', 404);
@@ -623,7 +623,7 @@ const assignReviewer = async (id, reviewerId) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     // Send email notification to student if enabled
     try {
@@ -716,7 +716,7 @@ const unassignReviewer = async (id) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     // Send WhatsApp notification
     try {
@@ -864,7 +864,7 @@ const getLastReviewForStudent = async (studentId) => {
         })
         .populate('program', 'name totalWeeks')
         .populate('programTask', 'name week re_review_fine_amount')
-        .populate('reviewer', 'fullName username email mobileNo');
+        .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
     if (!taskReview) {
         throw new AppError('No reviews found for this student', 404);

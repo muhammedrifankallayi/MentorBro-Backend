@@ -62,6 +62,10 @@ const reviewerSchema = new mongoose.Schema(
             trim: true,
             maxlength: [100, 'Company name cannot be more than 100 characters'],
         },
+        googleMeetLink: {
+            type: String,
+            trim: true,
+        },
         isActive: {
             type: Boolean,
             default: true,
