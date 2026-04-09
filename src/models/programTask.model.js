@@ -62,4 +62,10 @@ programTaskSchema.pre(/^find/, function (next) {
 
 const ProgramTask = mongoose.model('ProgramTask', programTaskSchema);
 
+// Force sync indexes in the background to automatically drop any old "ghost" unique indexes
+// like a stale program_1 index that wasn't properly deleted when schema updated.
+ProgramTask.syncIndexes()
+    .then(() => console.log('ProgramTask indexes synced successfully'))
+    .catch(err => console.error('Error syncing ProgramTask indexes:', err));
+
 module.exports = ProgramTask;
