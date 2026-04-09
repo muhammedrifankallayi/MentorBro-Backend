@@ -114,6 +114,10 @@ const taskReviewSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        isNoReview: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

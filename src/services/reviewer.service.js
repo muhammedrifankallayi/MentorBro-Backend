@@ -203,7 +203,7 @@ const createReviewerByAdmin = async (reviewerData, loginUrl = null) => {
 const getAllReviewers = async (queryParams = {}) => {
     const {
         page = 1,
-        limit = 10,
+        limit = 100,
         search = '',
         sortBy = 'createdAt',
         sortOrder = 'desc',

@@ -28,6 +28,7 @@ const create = async (reviewData) => {
     if (reviewData.programTask) {
         const programTask = await ProgramTask.findById(reviewData.programTask);
         if (programTask) {
+            reviewData.isNoReview = programTask.isNoReview || false;
             if (reviewData.isReReview) {
                 const fineAmount = (programTask.re_review_fine_amount && programTask.re_review_fine_amount > 0)
                     ? programTask.re_review_fine_amount
@@ -61,29 +62,31 @@ const create = async (reviewData) => {
         .populate('programTask', 'name week re_review_fine_amount')
         .populate('reviewer', 'fullName username email mobileNo googleMeetLink');
 
-    // Send WhatsApp notification if enabled
+    // Send WhatsApp notification if enabled and not No Review
     try {
-        const SystemConfig = require('../models/systemConfig.model');
-        const whatsappService = require('./whatsapp.service');
+        if (!populatedReview.isNoReview) {
+            const SystemConfig = require('../models/systemConfig.model');
+            const whatsappService = require('./whatsapp.service');
 
-        const config = await SystemConfig.getSettings();
+            const config = await SystemConfig.getSettings();
 
-        if (config.receive_message_on_whatsapp_in_review_schedule) {
-            const notificationData = {
-                studentName: populatedReview.student?.name,
-                studentEmail: populatedReview.student?.email,
-                batchName: populatedReview.student?.batch?.name,
-                taskName: `${populatedReview.programTask?.name || 'Task Review'}${populatedReview.isReReview ? ' (Re-Review)' : ''}`,
-                date: populatedReview.scheduledDate,
-                time: populatedReview.scheduledTime,
-                secondTime: populatedReview.secondScheduledTime
-            };
+            if (config.receive_message_on_whatsapp_in_review_schedule) {
+                const notificationData = {
+                    studentName: populatedReview.student?.name,
+                    studentEmail: populatedReview.student?.email,
+                    batchName: populatedReview.student?.batch?.name,
+                    taskName: `${populatedReview.programTask?.name || 'Task Review'}${populatedReview.isReReview ? ' (Re-Review)' : ''}`,
+                    date: populatedReview.scheduledDate,
+                    time: populatedReview.scheduledTime,
+                    secondTime: populatedReview.secondScheduledTime
+                };
 
-            const groupId = config.whapi?.groupId || '120363417698652224@g.us';
+                const groupId = config.whapi?.groupId || '120363417698652224@g.us';
 
-            if (config.send_review_scheduled_to_group) {
-                // Send to dynamic Group ID
-                await whatsappService.sendNotification(groupId, 'REVIEW_SCHEDULED', notificationData);
+                if (config.send_review_scheduled_to_group) {
+                    // Send to dynamic Group ID
+                    await whatsappService.sendNotification(groupId, 'REVIEW_SCHEDULED', notificationData);
+                }
             }
         }
     } catch (whatsappError) {
@@ -127,8 +130,9 @@ const getAll = async (queryParams = {}) => {
     // Handle reviewer filter - support for unassigned reviews
     if (reviewer !== undefined) {
         if (reviewer === 'null' || reviewer === 'unassigned' || reviewer === '') {
-            // Get reviews where reviewer is not assigned (null or doesn't exist)
+            // Get reviews where reviewer is not assigned (null or doesn't exist), excluding no-review tasks
             filter.reviewer = { $in: [null, undefined] };
+            filter.isNoReview = { $ne: true };
         } else {
             // Get reviews for specific reviewer
             filter.reviewer = reviewer;
