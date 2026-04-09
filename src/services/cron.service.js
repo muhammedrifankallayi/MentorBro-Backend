@@ -34,10 +34,10 @@ class CronService {
             this.sendDailyMeetingMessage(istDate);
         }, { timezone: 'Asia/Kolkata' });
 
-        // 3. 30-Minute Upcoming Review Reminders (Checked every minute)
+        // 3. 5-Minute Upcoming Review Reminders (Checked every minute)
         cron.schedule('* * * * *', () => {
             const istDate = this.getIstDate();
-            this.send30MinReminders(istDate);
+            this.send5MinReminders(istDate);
         }, { timezone: 'Asia/Kolkata' });
     }
 
@@ -129,10 +129,10 @@ class CronService {
     }
 
     /**
-     * Send reminders 30 minutes before a review starts
+     * Send reminders 5 minutes before a review starts
      * @param {Date} currentIstDate - Current date/time in IST
      */
-    async send30MinReminders(currentIstDate) {
+    async send5MinReminders(currentIstDate) {
         try {
             const SystemConfig = require('../models/systemConfig.model');
             const config = await SystemConfig.getSettings();
@@ -166,8 +166,8 @@ class CronService {
                 const diffMs = scheduledTimeIst - currentIstDate;
                 const diffMins = Math.round(diffMs / 60000);
 
-                // If scheduled in exactly 30 minutes (catch 29-31 range)
-                if (diffMins >= 29 && diffMins <= 30) {
+                // If scheduled in exactly 5 minutes (catch 4-5 range)
+                if (diffMins >= 4 && diffMins <= 5) {
                     const student = review.student;
                     const notificationData = {
                         studentName: student?.name || 'Student',
@@ -189,12 +189,12 @@ class CronService {
                         // Mark as sent
                         await TaskReview.findByIdAndUpdate(review._id, { isReminderSent: true });
 
-                        logger.info(`30-min reminder for ${student?.name} sent to group ${groupId}`);
+                        logger.info(`5-min reminder for ${student?.name} sent to group ${groupId}`);
                     }
                 }
             }
         } catch (error) {
-            logger.error('Error in 30-min reminder task:', error.message);
+            logger.error('Error in 5-min reminder task:', error.message);
         }
     }
 
