@@ -9,6 +9,7 @@ const Employee = require('../../models/employee.model');
 const { catchAsync, ApiResponse } = require('../../utils');
 const attendanceService = require('../../services/attendance.service');
 const employeeTaskService = require('../../services/employeeTask.service');
+const employeeTaskTemplateService = require('../../services/employeeTaskTemplate.service');
 
 const router = express.Router();
 
@@ -160,6 +161,33 @@ router.put('/employee-tasks/:id', catchAsync(async (req, res) => {
 router.delete('/employee-tasks/:id', catchAsync(async (req, res) => {
     await employeeTaskService.deleteTask(req.params.id);
     ApiResponse.success(res, null, 'Task deleted successfully');
+}));
+
+// Employee Task Template routes
+router.get('/task-templates', catchAsync(async (req, res) => {
+    const { page = 1, limit = 100, search = '' } = req.query;
+    const result = await employeeTaskTemplateService.getAll({ page, limit, search });
+    ApiResponse.list(res, result.data, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        pages: result.pages,
+    }, 'Templates fetched successfully');
+}));
+
+router.post('/task-templates', catchAsync(async (req, res) => {
+    const template = await employeeTaskTemplateService.create(req.body);
+    ApiResponse.created(res, template, 'Template created successfully');
+}));
+
+router.put('/task-templates/:id', catchAsync(async (req, res) => {
+    const template = await employeeTaskTemplateService.update(req.params.id, req.body);
+    ApiResponse.success(res, template, 'Template updated successfully');
+}));
+
+router.delete('/task-templates/:id', catchAsync(async (req, res) => {
+    await employeeTaskTemplateService.deleteTemplate(req.params.id);
+    ApiResponse.success(res, null, 'Template deleted successfully');
 }));
 
 module.exports = router;
