@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const TaskReview = require('../models/taskReview.model');
 const whatsappService = require('./whatsapp.service');
+const notificationService = require('./notification.service');
 const logger = require('../utils/logger');
 
 /**
@@ -38,6 +39,12 @@ class CronService {
         cron.schedule('* * * * *', () => {
             const istDate = this.getIstDate();
             this.send5MinReminders(istDate);
+        }, { timezone: 'Asia/Kolkata' });
+
+        // 4. 2-Minute FCM Push Notification to Students (Checked every minute)
+        cron.schedule('* * * * *', () => {
+            const istDate = this.getIstDate();
+            this.send2MinStudentReminders(istDate);
         }, { timezone: 'Asia/Kolkata' });
     }
 
@@ -195,6 +202,73 @@ class CronService {
             }
         } catch (error) {
             logger.error('Error in 5-min reminder task:', error.message);
+        }
+    }
+
+    /**
+     * Send FCM push notifications to students 2 minutes before their review starts
+     * @param {Date} currentIstDate - Current date/time in IST
+     */
+    async send2MinStudentReminders(currentIstDate) {
+        try {
+            // Get start and end of today in IST
+            const startOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 0, 0, 0, 0);
+            const endOfDay = new Date(currentIstDate.getFullYear(), currentIstDate.getMonth(), currentIstDate.getDate(), 23, 59, 59, 999);
+
+            // Find reviews for today that haven't had a 2-min reminder sent
+            const reviews = await TaskReview.find({
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+                isCancelled: false,
+                isReviewCompleted: false,
+                isActive: true,
+                is2MinReminderSent: { $ne: true }
+            })
+                .populate('student', 'name email fcmToken')
+                .populate('programTask', 'name')
+                .populate('reviewer', 'fullName username googleMeetLink');
+
+            for (const review of reviews) {
+                const targetTime = review.confirmedTime || review.scheduledTime;
+                if (!targetTime) continue;
+
+                const scheduledTimeIst = this._parseTimeToDate(currentIstDate, targetTime);
+                if (!scheduledTimeIst) continue;
+
+                const diffMs = scheduledTimeIst - currentIstDate;
+                const diffMins = Math.round(diffMs / 60000);
+
+                // Trigger when review is 1-2 minutes away
+                if (diffMins >= 1 && diffMins <= 2) {
+                    const student = review.student;
+                    const fcmToken = student?.fcmToken;
+
+                    if (fcmToken) {
+                        const reviewerName = review.reviewer?.fullName || review.reviewer?.username || 'Mentor';
+                        const taskName = review.programTask?.name || 'Task Review';
+                        const meetLink = review.reviewer?.googleMeetLink || '';
+
+                        await notificationService.sendToDevice(fcmToken, {
+                            title: 'Your Review Starts in 2 Minutes!',
+                            body: `${taskName} with ${reviewerName}. Get ready to join!`,
+                            data: {
+                                type: 'REVIEW_REMINDER_2MIN',
+                                reviewId: review._id.toString(),
+                                meetLink: meetLink,
+                                reviewerName: reviewerName,
+                                taskName: taskName,
+                                link: '/dashboard'
+                            }
+                        });
+
+                        logger.info(`2-min FCM reminder sent to student ${student?.name} (${student?.email})`);
+                    }
+
+                    // Mark as sent regardless of FCM token availability
+                    await TaskReview.findByIdAndUpdate(review._id, { is2MinReminderSent: true });
+                }
+            }
+        } catch (error) {
+            logger.error('Error in 2-min student reminder task:', error.message);
         }
     }
 
