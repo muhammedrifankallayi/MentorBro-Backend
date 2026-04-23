@@ -387,15 +387,16 @@ const update = async (id, updateData) => {
                     if (updateData.re_reviewDetails?.proof || (currentReview.re_reviewDetails && currentReview.re_reviewDetails.proof)) {
                         updateData.isPaymentOrderd = true;
                     }
-                } else {
+                } else if (updateData.isReReview === false) {
+                    // Only clear re_reviewDetails when explicitly turning off re-review
                     updateData.paymentAmount = programTask.cost || 0;
-                    // Clear re_reviewDetails if it's no longer a re-review
                     updateData.re_reviewDetails = {
                         fineAmount: 0,
                         paymentDate: null,
                         proof: null
                     };
                 }
+                // else: just updating re_reviewDetails on a non-re-review record — let the data pass through
             }
         }
     }
