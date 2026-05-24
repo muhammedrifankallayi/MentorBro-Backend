@@ -2,8 +2,8 @@ module.exports = {
     // JWT Configuration
     jwt: {
         secret: process.env.JWT_SECRET,
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-        cookieExpiresIn: parseInt(process.env.JWT_COOKIE_EXPIRES_IN) || 7,
+        expiresIn: process.env.JWT_EXPIRES_IN || '365d',   // Default: 1 year
+        cookieExpiresIn: parseInt(process.env.JWT_COOKIE_EXPIRES_IN) || 365, // Default: 1 year in days
     },
 
     // Rate Limiting Configuration
