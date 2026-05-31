@@ -51,6 +51,10 @@ const studentSchema = new mongoose.Schema(
             enum: ['pending', 'approved', 'rejected'],
             default: 'pending',
         },
+        isBlocked: {
+            type: Boolean,
+            default: false,
+        },
         batch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Batch',

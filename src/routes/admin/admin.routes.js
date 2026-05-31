@@ -35,6 +35,7 @@ router.use('/mail', mailRoutes);
 router.get('/students/status/:status', adminController.getStudentsByApprovalStatus);
 router.get('/students/batch/:batchId', adminController.getStudentsByBatch);
 router.patch('/students/:id/approval', adminController.updateStudentApproval);
+router.patch('/students/:id/block', adminController.updateStudentBlock);
 router.put('/students/:id', adminController.updateStudent);
 router.post('/students/:id/impersonate', adminController.impersonateStudent);
 

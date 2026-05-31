@@ -69,6 +69,13 @@ const protect = catchAsync(async (req, res, next) => {
         );
     }
 
+    // 3.5) Check if student is blocked
+    if (decoded.role === 'student' && currentUser.isBlocked) {
+        return next(
+            new AppError('Your account has been blocked. Please contact support.', 403, 'ACCOUNT_BLOCKED')
+        );
+    }
+
     // 4) Check if user changed password after the token was issued
     if (currentUser.changedPasswordAfter && currentUser.changedPasswordAfter(decoded.iat)) {
         return next(

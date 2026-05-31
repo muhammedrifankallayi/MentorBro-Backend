@@ -87,6 +87,10 @@ const login = async (email, password) => {
         throw new AppError('Incorrect email or password', 401);
     }
 
+    if (student.isBlocked) {
+        throw new AppError('Your account has been blocked. Please contact support.', 403, 'ACCOUNT_BLOCKED');
+    }
+
     return student;
 };
 
@@ -486,6 +490,22 @@ const resetPassword = async (token, password) => {
     return student;
 };
 
+const updateBlockStatus = async (studentId, isBlocked) => {
+    const student = await Student.findByIdAndUpdate(
+        studentId,
+        { isBlocked },
+        { new: true, runValidators: true }
+    )
+        .populate('batch', 'name startOn endedOn')
+        .populate('program', 'name totalWeeks');
+
+    if (!student) {
+        throw new AppError('Student not found', 404);
+    }
+
+    return student;
+};
+
 module.exports = {
     signToken,
     createSendToken,
@@ -500,6 +520,7 @@ module.exports = {
     updateApprovalStatus,
     getByBatch,
     getBatchRanking,
+    updateBlockStatus,
 };
 
 

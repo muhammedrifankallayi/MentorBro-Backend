@@ -1,6 +1,6 @@
 const adminService = require('../../services/admin.service');
 const studentService = require('../../services/student.service');
-const { catchAsync, ApiResponse } = require('../../utils');
+const { catchAsync, ApiResponse, AppError } = require('../../utils');
 
 /**
  * @desc    Register admin
@@ -124,6 +124,21 @@ const impersonateStudent = catchAsync(async (req, res) => {
     ApiResponse.success(res, { token }, 'Impersonation token generated successfully');
 });
 
+/**
+ * @desc    Block or unblock a student
+ * @route   PATCH /api/v1/admin/students/:id/block
+ * @access  Admin only
+ */
+const updateStudentBlock = catchAsync(async (req, res) => {
+    const { isBlocked } = req.body;
+    if (typeof isBlocked !== 'boolean') {
+        throw new AppError('isBlocked must be a boolean value', 400);
+    }
+    const student = await studentService.updateBlockStatus(req.params.id, isBlocked);
+    const message = isBlocked ? 'Student blocked successfully' : 'Student unblocked successfully';
+    ApiResponse.success(res, { student }, message);
+});
+
 module.exports = {
     register,
     login,
@@ -135,6 +150,7 @@ module.exports = {
     getStudentsByBatch,
     updateStudent,
     impersonateStudent,
+    updateStudentBlock,
 };
 
 
