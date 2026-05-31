@@ -146,7 +146,8 @@ const getAll = async (queryParams = {}) => {
     if (isPaymentCompleted !== undefined) filter.isPaymentCompleted = isPaymentCompleted === 'true';
     if (isReReview !== undefined) filter.isReReview = isReReview === 'true';
     if (queryParams.isCancelled !== undefined) {
-        filter.isCancelled = queryParams.isCancelled === 'true' || queryParams.isCancelled === true;
+        const isCancelledValue = queryParams.isCancelled === 'true' || queryParams.isCancelled === true;
+        filter.isCancelled = isCancelledValue ? true : { $in: [false, null] };
     }
 
     // Scheduled Date Range Filter
