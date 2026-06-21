@@ -32,6 +32,7 @@ router.use('/config', systemConfigRoutes);
 router.use('/mail', mailRoutes);
 
 // Student management routes
+router.get('/students/review-status', adminController.getStudentsReviewStatus);
 router.get('/students/status/:status', adminController.getStudentsByApprovalStatus);
 router.get('/students/batch/:batchId', adminController.getStudentsByBatch);
 router.patch('/students/:id/approval', adminController.updateStudentApproval);

@@ -506,6 +506,159 @@ const updateBlockStatus = async (studentId, isBlocked) => {
     return student;
 };
 
+/**
+ * Get review-status overview for ALL active students.
+ * For each student derives: batch, domain (program name), current week,
+ * last completed review date and days since that review.
+ * Sorted by days-since-review DESC (most overdue first); students who have
+ * never had a completed review (daysSinceReview = null) land at the bottom.
+ * @param {Object} queryParams - { page, limit, search }
+ */
+const getReviewStatusOverview = async (queryParams = {}) => {
+    const { page = 1, limit = 20, search } = queryParams;
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
+    const skip = (pageNum - 1) * limitNum;
+
+    // aggregate() bypasses the model pre(/^find/) isActive hook, so filter explicitly.
+    const matchStage = { isActive: { $ne: false } };
+    if (search) {
+        matchStage.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+        ];
+    }
+
+    const result = await Student.aggregate([
+        { $match: matchStage },
+        // Batch
+        {
+            $lookup: {
+                from: 'batches',
+                localField: 'batch',
+                foreignField: '_id',
+                as: 'batch',
+            },
+        },
+        { $unwind: { path: '$batch', preserveNullAndEmptyArrays: true } },
+        // Program (domain = program name)
+        {
+            $lookup: {
+                from: 'programs',
+                localField: 'program',
+                foreignField: '_id',
+                as: 'program',
+            },
+        },
+        { $unwind: { path: '$program', preserveNullAndEmptyArrays: true } },
+        // Latest completed review for this student
+        {
+            $lookup: {
+                from: 'taskreviews',
+                let: { studentId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: { $eq: ['$student', '$$studentId'] },
+                            isReviewCompleted: true,
+                            isCancelled: { $ne: true },
+                            isActive: { $ne: false },
+                            endDate: { $ne: null },
+                        },
+                    },
+                    { $sort: { endDate: -1 } },
+                    { $limit: 1 },
+                    {
+                        $lookup: {
+                            from: 'programtasks',
+                            localField: 'programTask',
+                            foreignField: '_id',
+                            as: 'programTask',
+                        },
+                    },
+                    { $unwind: { path: '$programTask', preserveNullAndEmptyArrays: true } },
+                    { $project: { endDate: 1, reviewStatus: 1, 'programTask.week': 1 } },
+                ],
+                as: 'lastReview',
+            },
+        },
+        { $unwind: { path: '$lastReview', preserveNullAndEmptyArrays: true } },
+        {
+            $addFields: {
+                lastReviewDate: '$lastReview.endDate',
+                lastReviewStatus: '$lastReview.reviewStatus',
+                // Current position: last completed week, +1 unless re-review (failed); week 1 if no review.
+                currentWeek: {
+                    $cond: [
+                        { $ifNull: ['$lastReview.programTask.week', false] },
+                        {
+                            $cond: [
+                                { $eq: ['$lastReview.reviewStatus', 'failed'] },
+                                '$lastReview.programTask.week',
+                                { $add: ['$lastReview.programTask.week', 1] },
+                            ],
+                        },
+                        1,
+                    ],
+                },
+                // Full 24h periods elapsed since the last review (compatible with older MongoDB).
+                daysSinceReview: {
+                    $cond: [
+                        { $ifNull: ['$lastReview.endDate', false] },
+                        {
+                            $floor: {
+                                $divide: [
+                                    { $subtract: ['$$NOW', '$lastReview.endDate'] },
+                                    1000 * 60 * 60 * 24,
+                                ],
+                            },
+                        },
+                        null,
+                    ],
+                },
+            },
+        },
+        {
+            $project: {
+                name: 1,
+                email: 1,
+                mobileNo: 1,
+                type: 1,
+                approvalStatus: 1,
+                createdAt: 1,
+                batch: { _id: '$batch._id', name: '$batch.name' },
+                domain: '$program.name',
+                currentWeek: 1,
+                totalWeeks: '$program.totalWeeks',
+                lastReviewDate: 1,
+                lastReviewStatus: 1,
+                daysSinceReview: 1,
+            },
+        },
+        // Most overdue first; null (never reviewed) sorts lowest on DESC → lands at bottom.
+        { $sort: { daysSinceReview: -1, name: 1 } },
+        {
+            $facet: {
+                data: [{ $skip: skip }, { $limit: limitNum }],
+                totalArr: [{ $count: 'count' }],
+            },
+        },
+    ]);
+
+    const students = result[0]?.data || [];
+    const total = result[0]?.totalArr[0]?.count || 0;
+
+    return {
+        students,
+        pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            pages: Math.ceil(total / limitNum),
+        },
+    };
+};
+
 module.exports = {
     signToken,
     createSendToken,
@@ -521,6 +674,7 @@ module.exports = {
     getByBatch,
     getBatchRanking,
     updateBlockStatus,
+    getReviewStatusOverview,
 };
 
 

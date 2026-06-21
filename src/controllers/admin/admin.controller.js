@@ -139,6 +139,16 @@ const updateStudentBlock = catchAsync(async (req, res) => {
     ApiResponse.success(res, { student }, message);
 });
 
+/**
+ * @desc    Get review-status overview for all students (batch, week, domain, last review, days since)
+ * @route   GET /api/v1/admin/students/review-status
+ * @access  Admin only
+ */
+const getStudentsReviewStatus = catchAsync(async (req, res) => {
+    const result = await studentService.getReviewStatusOverview(req.query);
+    ApiResponse.list(res, result.students, result.pagination, 'Students review status retrieved successfully');
+});
+
 module.exports = {
     register,
     login,
@@ -151,6 +161,7 @@ module.exports = {
     updateStudent,
     impersonateStudent,
     updateStudentBlock,
+    getStudentsReviewStatus,
 };
 
 
