@@ -140,6 +140,16 @@ const updateStudentBlock = catchAsync(async (req, res) => {
 });
 
 /**
+ * @desc    Delete a student
+ * @route   DELETE /api/v1/admin/students/:id
+ * @access  Admin only
+ */
+const deleteStudent = catchAsync(async (req, res) => {
+    await studentService.deleteStudent(req.params.id);
+    ApiResponse.success(res, null, 'Student deleted successfully');
+});
+
+/**
  * @desc    Get review-status overview for all students (batch, week, domain, last review, days since)
  * @route   GET /api/v1/admin/students/review-status
  * @access  Admin only
@@ -161,6 +171,7 @@ module.exports = {
     updateStudent,
     impersonateStudent,
     updateStudentBlock,
+    deleteStudent,
     getStudentsReviewStatus,
 };
 

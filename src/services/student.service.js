@@ -507,6 +507,26 @@ const updateBlockStatus = async (studentId, isBlocked) => {
 };
 
 /**
+ * Soft-delete a student by marking them inactive.
+ * The pre(/^find/) hook hides isActive:false records, so the student
+ * disappears from all listings while related review data is preserved.
+ * @param {string} studentId - Student ID
+ */
+const deleteStudent = async (studentId) => {
+    const student = await Student.findByIdAndUpdate(
+        studentId,
+        { isActive: false },
+        { new: true, runValidators: true }
+    );
+
+    if (!student) {
+        throw new AppError('Student not found', 404);
+    }
+
+    return student;
+};
+
+/**
  * Get review-status overview for ALL active students.
  * For each student derives: batch, domain (program name), current week,
  * last completed review date and days since that review.
@@ -521,7 +541,8 @@ const getReviewStatusOverview = async (queryParams = {}) => {
     const skip = (pageNum - 1) * limitNum;
 
     // aggregate() bypasses the model pre(/^find/) isActive hook, so filter explicitly.
-    const matchStage = { isActive: { $ne: false } };
+    // Exclude blocked students from the review-status overview.
+    const matchStage = { isActive: { $ne: false }, isBlocked: { $ne: true } };
     if (search) {
         matchStage.$or = [
             { name: { $regex: search, $options: 'i' } },
@@ -674,6 +695,7 @@ module.exports = {
     getByBatch,
     getBatchRanking,
     updateBlockStatus,
+    deleteStudent,
     getReviewStatusOverview,
 };
 
